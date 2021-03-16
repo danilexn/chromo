@@ -10,6 +10,7 @@ Clone the repository in your local computer or server
 
 ### ...with Docker
 <code>docker build -t tronos-shiny .</code>
+
 <code>docker run -p 127.0.0.1:8080:3838 tronos-shiny</code>
 
 Now, open a browser at http://127.0.0.1:8080, and the application should be ready
