@@ -6,6 +6,7 @@
 ## Running tronos-shiny
 Clone the repository in your local computer or server
 <code>git clone https://github.com/danilexn/tronos-shiny</code>
+
 <code>cd tronos-shiny</code>
 
 ### ...with Docker
