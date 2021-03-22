@@ -5,6 +5,7 @@
 
 ## Running tronos-shiny
 Clone the repository in your local computer or server
+
 <code>git clone https://github.com/danilexn/tronos-shiny</code>
 
 <code>cd tronos-shiny</code>
@@ -17,6 +18,8 @@ Clone the repository in your local computer or server
 Now, open a browser at http://127.0.0.1:8080, and the application should be ready
 
 ### ...with docker-compose
+<code>docker build -t tronos-shiny .</code>
+
 <code>sudo docker-compose up -d</code>
 
 Now, open a browser at http://127.0.0.1:80, and the application should be ready.
