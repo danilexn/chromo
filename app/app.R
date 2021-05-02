@@ -1,4 +1,4 @@
-# Tronos
+# ChroMo
 # Web App for unsupervised analysis of nuclear oscillations
 #
 # MIT License
@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-options(shiny.maxRequestSize = 30 * 1024 ^ 2)
+options(shiny.maxRequestSize = 5 * 1024 ^ 2) # maximum 5 mb
 library(shiny)
 library(shinycssloaders)
 library(promises)
@@ -57,18 +57,23 @@ library(pcalg)
 library(VLTimeCausality)
 library(network)
 library(sna)
+library(networkD3)
+library(igraph)
 library(GGally)
+library(PerformanceAnalytics)
 
 plan(sequential)
 
-source("tronos_functions.R")
-example.data <- read.csv("example.csv")
-example.data.huge <- read.csv("example_huge.csv")
+source("chromo_functions.R")
+example.data <- read.csv("../examples/example.csv")
+example.data.huge <- read.csv("../examples/example_huge.csv")
 vals <- reactiveValues(count = 0)
+appName <- 'ChroMo'
 
 ui <-
   navbarPage(
-    "Tronos",
+    windowTitle = appName,
+    title=div(style = "position: relative; top: -5px;", img(height = "35px", src='logo.png'), HTML(paste0('<b>',appName,'</b>'))),
     fluid = TRUE,
     collapsible = TRUE,
     theme = shinytheme("lumen"),
@@ -132,20 +137,6 @@ ui <-
                        multiple = TRUE,
                        options = NULL
                      ),
-                     selectizeInput(
-                       "morph_vars",
-                       "Morphology variables",
-                       choices = list("None" = "none"),
-                       multiple = TRUE,
-                       options = NULL
-                     ),
-                     selectizeInput(
-                       "signal_vars",
-                       "Signal variables",
-                       choices = list("None" = "none"),
-                       multiple = TRUE,
-                       options = NULL
-                     ),
                      numericInput(
                        "sampl_freq",
                        "Sampling period (s/frame)",
@@ -204,7 +195,12 @@ ui <-
                      hr(),
                      checkboxInput(
                        inputId = "calc_veloc",
-                       label = "Add velocities to data",
+                       label = "Add vectorial and angular velocity",
+                       value = FALSE
+                     ),
+                     checkboxInput(
+                       inputId = "calc_more",
+                       label = "Add cumulative distance",
                        value = FALSE
                      ),
                      hr(),
@@ -212,8 +208,9 @@ ui <-
                        "norm_time",
                        "Time normalization",
                        choices = list(
-                         "First is zero" = "none",
-                         "Last is zero" = "last"
+                         "None" = "none",
+                         "Last is common" = "last",
+                         "Last is common and zero" = "last_norm"
                        ),
                        selected = "none"
                      ),
@@ -233,7 +230,23 @@ ui <-
                         multiple = TRUE,
                         options = NULL
                       ),
-                     )
+                     ),
+                     hr(),
+                     h4("Plot export"),
+                          sliderInput(
+                            "plot_width",
+                            label = "Width (px)",
+                            min = 100,
+                            max = 1800,
+                            value = c(600)
+                          ),
+                          sliderInput(
+                              "plot_height",
+                              label = "Height (px)",
+                              min = 100,
+                              max = 1800,
+                              value = c(400)
+                          )
                    ),
                    NULL
                  ),
@@ -417,7 +430,7 @@ ui <-
                        "Analysis group",
                        choices = list("None" = "none"),
                        selected = "none",
-                       multiple = FALSE,
+                       multiple = TRUE,
                        options = NULL
                      ),
                      selectizeInput(
@@ -450,6 +463,13 @@ ui <-
                      max = 1,
                      value = 0.98
                    ),
+                   sliderInput(
+                     "motif_amount",
+                     label = "Motifs to discover",
+                     min = 1,
+                     max = 6,
+                     value = 3
+                   ),
                    conditionalPanel(
                     condition = "input.tabmotifs=='Per segment'",
                     actionButton('run_motifs', 'Run Motif Discovery')
@@ -476,11 +496,11 @@ ui <-
                  
                  # Correlations
                  conditionalPanel(
-                   condition = "input.tabs=='Correlations'",
-                   h4("What to correlate?"),
+                   condition = "input.tabs=='Causality'",
+                   h4("Causality analysis"),
                    selectizeInput(
                        "df_query_causality",
-                       "Causality variables",
+                       "Selection of variables",
                        choices = list("None" = "none"),
                        selected = "none",
                        multiple = TRUE,
@@ -488,7 +508,7 @@ ui <-
                    ),
                    selectizeInput(
                        "df_sequence_causality",
-                       "Analysis group",
+                       "Data from group",
                        choices = list("None" = "none"),
                        selected = "none",
                        multiple = FALSE,
@@ -501,38 +521,30 @@ ui <-
                   #    value = FALSE
                   #  ),
                    hr(),
-                   h4("How to correlate?"),
+                   h4("Test parameters"),
                    sliderInput(
                       "pval_corr_range",
-                      label = "Causality analysis p-value",
+                      label = "Significance threshold (p-value)",
                       min = 0,
                       max = 0.25,
                       value = c(0.05)
                     ),
                    sliderInput(
                       "lags_corr_range",
-                      label = "Lags to explore",
+                      label = "Maximum lags to explore",
                       min = 0,
                       max = 50,
                       value = c(10)
                     ),
-                    hr(),
-                    h4("How to show?"),
                     sliderInput(
                       "perc_corr_range",
-                      label = "Connection presence (%)",
+                      label = "Connection presence",
                       min = 0,
                       max = 1,
                       value = c(0.8)
                     ),
-                    sliderInput(
-                      "size_corr_range",
-                      label = "Edges size",
-                      min = 1,
-                      max = 50,
-                      value = c(12)
-                    ),
-                    actionButton('run_correlation', 'Run causality analysis')
+                    hr(),
+                    actionButton('run_causal', 'Run causality analysis')
                  )
                ),
                
@@ -560,6 +572,7 @@ ui <-
                      tabsetPanel(id = "tabsegment",
                       tabPanel("Discovery", icon = icon("microscope"),
                         h4("Group plot"),
+                        downloadButton("downSegm", "Download figure"),
                         withSpinner(plotlyOutput("plot_segments", height = "auto")),
                         hr(),
                         h4("Clustered Segments significance"),
@@ -574,16 +587,20 @@ ui <-
                         tabsetPanel(id = "spectrumtab",
                           tabPanel("Grouped plots", icon = icon("layer-group"),
                             h4("Spectral densities plot"),
-                            withSpinner(plotlyOutput("plot_spectrum", height = "auto", width = 600)),
+                            downloadButton("downSpec", "Download figure"),
+                            withSpinner(plotlyOutput("plot_spectrum", height = "auto")),
                             hr(),
                             h4("Spectral densities per group"),
-                            withSpinner(plotlyOutput("plot_spectrum_segments", height = "auto", width = 600))
+                            downloadButton("downSpecSeg", "Download figure"),
+                            withSpinner(plotlyOutput("plot_spectrum_segments", height = "auto"))
                           ),
                           tabPanel("Heatmaps", icon = icon("map"),
                             h4("Spectral heatmaps"),
+                            downloadButton("downSpecH", "Download figure"),
                             withSpinner(plotOutput("plot_heatmap", height = "auto", width = 600)),
                             hr(),
                             h4("Spectral heatmaps per segment"),
+                            downloadButton("downSpecSegH", "Download figure"),
                             withSpinner(plotOutput("plot_heatmap_segment", height = "auto", width = 600))
                           ),
                           tabPanel("Summary", icon = icon("book"),
@@ -597,16 +614,20 @@ ui <-
                         tabsetPanel(id = "velocitytab",
                           tabPanel("Grouped plots",  icon = icon("layer-group"),
                             h4("Velocity densities"),
+                            downloadButton("downVel", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities", height = "auto")),
                             hr(),
                             h4("Velocity per segment"),
+                            downloadButton("downVelSeg", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities_segment", height = "auto"))
                           ),
                           tabPanel("Heatmaps",  icon = icon("map"),
                             h4("Velocity heatmaps"),
+                            downloadButton("downVelH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat", height = "auto", width = 600)),
                             hr(),
                             h4("Velocity heatmaps per segment"),
+                            downloadButton("downVelSegH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat_segment", height = "auto", width = 600))
                           ),
                           tabPanel("Summary",  icon = icon("book"),
@@ -617,13 +638,16 @@ ui <-
                       ),
                       tabPanel("Displacement", icon = icon("walking"),
                         h4("Mean Squared Displacement (MSD)"),
-                        withSpinner(plotlyOutput("plot_msd", height = "auto", width = 600)),
+                        downloadButton("downMSD", "Download figure"),
+                        withSpinner(plotlyOutput("plot_msd", height = "auto")),
                         hr(),
                         h4("MSD by segment"),
+                        downloadButton("downMSDSeg", "Download figure"),
                         withSpinner(plotlyOutput("plot_msd_segment", height = "auto"))
                       ),
                       tabPanel("Individual", icon = icon("dice-one"),
                       h4("Individual plot"),
+                      downloadButton("downIndiv", "Download figure"),
                       withSpinner(plotlyOutput("plot_individual", height = "auto")),
                       conditionalPanel(condition = "input.ind_specgram == true",
                                       fluidPage(
@@ -689,7 +713,7 @@ ui <-
                     )
                    ),
                    tabPanel(
-                     "Correlations", icon = icon("connectdevelop"),
+                     "Causality", icon = icon("connectdevelop"),
                      br(),
                      tabsetPanel(id = "tabcorrs",
                         tabPanel("Global", icon = icon("layer-group"),
@@ -700,7 +724,7 @@ ui <-
                               column(1, downloadButton("downPC", "Download figure")),
                             )
                           ),
-                          withSpinner(plotOutput("plot_pc_corr", height = "auto")),
+                          withSpinner(forceNetworkOutput("plot_pc_corr", width = "600px", height = "600px")),
                           hr(),
                           fluidPage(
                             fluidRow(
@@ -708,7 +732,7 @@ ui <-
                               column(1, downloadButton("downVLTE", "Download figure")),
                             )
                           ),
-                          withSpinner(plotOutput("plot_vlte_corr", height = "auto")),
+                          withSpinner(forceNetworkOutput("plot_vlte_corr", width = "600px", height = "600px")),
                           hr(),
                           fluidPage(
                             fluidRow(
@@ -716,7 +740,15 @@ ui <-
                               column(1, downloadButton("downVLGC", "Download figure")),
                             )
                           ),
-                          withSpinner(plotOutput("plot_vlgc_corr", height = "auto"))
+                          withSpinner(forceNetworkOutput("plot_vlgc_corr", width = "600px", height = "600px")),
+                          hr(),
+                          fluidPage(
+                            fluidRow(
+                              column(4, h4("Correlation"))
+                              #column(1, downloadButton("downVLTE", "Download figure")),
+                            )
+                          ),
+                          withSpinner(plotOutput("plot_cor", height = "auto"))
                         ),
                         tabPanel("Matrix", icon = icon("border-all"),
                           br(),
@@ -788,7 +820,7 @@ server <- function(input, output, session) {
 
           names(df_input_list) <- gsub(input$upload$name, pattern="\\..*", replacement="")
 
-          df_input <- bind_rows(df_input_list, .id = "group.file.tronos")
+          df_input <- bind_rows(df_input_list, .id = "group.file.chromo")
 
           data <- df_input
         })
@@ -858,7 +890,12 @@ server <- function(input, output, session) {
                             angular_speed(data.frame(!!sym(coords[1]), !!sym(coords[2])),
                                           coord.names = coords),
                            cal.speed =
-                            calculate.velocity(!!sym(coords[1]), !!sym(coords[2])))
+                            calculate.velocity(!!sym(coords[1]), !!sym(coords[2])),)
+    }
+    if (input$calc_more && length(coords) == 2) {
+      norm_temp <- norm_temp %>% group_by(!!sym(input$particle_vars), !!sym(input$grouping_vars)) %>%
+                    mutate(cum.dist =
+                            calculate.cumdist(!!sym(coords[1]), !!sym(coords[2])))
     }
     norm_temp <- norm_temp %>%
                         na.omit() %>% ungroup()
@@ -891,9 +928,7 @@ server <- function(input, output, session) {
     columns_select <- c(input$time_vars,
                         input$coord_vars,
                         input$particle_vars,
-                        input$grouping_vars,
-                        input$morph_vars,
-                        input$signal_vars)
+                        input$grouping_vars)
 
     if (!is.empty(columns_select) && input$show_selected) {
       df <- df[, columns_select]
@@ -913,6 +948,13 @@ server <- function(input, output, session) {
     if (input$norm_time == "last") {
       df <- df %>% group_by(!!sym(input$particle_vars)) %>%
         mutate(!!sym(input$time_vars) := !!sym(input$time_vars) - max(!!sym(input$time_vars))) %>%
+        ungroup()
+      df <- as.data.frame(df)
+    }
+
+    if (input$norm_time == "last_norm") {
+      df <- df %>% group_by(!!sym(input$particle_vars)) %>%
+        mutate(!!sym(input$time_vars) := !!sym(input$time_vars) - max(!!sym(input$time_vars))) %>%
         ungroup() %>% mutate(!!sym(input$time_vars) := !!sym(input$time_vars) - min(!!sym(input$time_vars)))
       df <- as.data.frame(df)
     }
@@ -926,27 +968,40 @@ server <- function(input, output, session) {
     }
     var_names  <- names(df_upload())
     var_list <- c("none", var_names)
-    if (input$calc_veloc) {
-      var_list <- c(var_list,
-                    "ang.speed",
-                    "cal.speed")
-    }
 
     input_names_cols <- c(
       "cols_normalize",
       "time_vars",
       "coord_vars",
-      "morph_vars",
-      "signal_vars",
       "particle_vars",
-      "grouping_vars",
+      "grouping_vars"
+    )
+
+    input_names_cols_calc <- c(
       "cols_individual_plot",
       "multiv_variables",
       "df_vars_motifs",
       "segment_variables",
       "df_query_causality"
     )
+
     for (u in input_names_cols) {
+      updateSelectizeInput(session, u,
+                           choices = var_list)
+    }
+
+    if (input$calc_veloc) {
+      var_list <- c(var_list,
+                    "ang.speed",
+                    "cal.speed")
+    }
+
+    if (input$calc_more) {
+      var_list <- c(var_list,
+                    "cum.dist")
+    }
+
+    for (u in input_names_cols_calc) {
       updateSelectizeInput(session, u,
                            choices = var_list)
     }
@@ -982,14 +1037,10 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, "coord_vars",
                          selected = coords)
     
-    # Find the morphology variables
-    
-    # Find the signal variables
-    
     # Find the label variable
     label <-
       intersect(var_list,
-                c("label", "group", "strain", "Label", "Group", "Strain", "group.file.tronos"))
+                c("label", "group", "strain", "Label", "Group", "Strain", "group.file.chromo"))
     
     updateSelectizeInput(session, "grouping_vars",
                          selected = label)
@@ -1104,10 +1155,10 @@ server <- function(input, output, session) {
         !is.empty(input$part_individual_plot)) {
 
       plt_df <- df_normalized()
-      plt_df$part.tronos <- as.factor(plt_df[[input$particle_vars]])
+      plt_df$part.chromo <- as.factor(plt_df[[input$particle_vars]])
       if (!is.empty(input$part_individual_plot)) {
         plt_df <-
-          plt_df %>% filter(part.tronos == input$part_individual_plot)
+          plt_df %>% filter(part.chromo == input$part_individual_plot)
       }
       p <- plt_df %>%
         pivot_longer(
@@ -1120,15 +1171,15 @@ server <- function(input, output, session) {
           values,
           color = !!sym(input$particle_vars)
         )) +
-        facet_grid(variable * part.tronos ~  ., scales = "free") +
+        facet_grid(variable * part.chromo ~  ., scales = "free") +
         geom_path(aes(group = !!sym(input$particle_vars))) +
         theme_bw() +
         labs(x = "Time") +
         theme(legend.position = "none")
       
-      p <- ggplotly(p, autosize = TRUE,
-            width = 600,
-            height = 200*length(input$cols_individual_plot)*length(input$part_individual_plot))
+      #p <- ggplotly(p, autosize = TRUE,
+      #      width = 600,
+      #      height = 200*length(input$cols_individual_plot)*length(input$part_individual_plot))
       return(p)
     }
   })
@@ -1139,6 +1190,15 @@ server <- function(input, output, session) {
       )
     )
     p <- segmentation.plot(segmentation_calc())
+    return(p)
+  })
+
+  plot_segments_ly <- reactive({
+    validate(
+      need(segmentation_calc(), "\n\n\n\nPlease, run 'Calculate Segmentation' to continue."
+      )
+    )
+    p <- segmentation.plotly(segmentation_calc())
     return(p)
   })
   
@@ -1242,22 +1302,23 @@ server <- function(input, output, session) {
     }
     
     df <- df_normalized()
-    seq <-
+    seqs <-
       df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$df_vars_motifs]
-    
-    query <- NULL
-    if (input$df_query_motifs != "none") {
-      query <-
-        df[df[[input$grouping_vars]] == input$df_query_motifs, input$df_vars_motifs]
-    }
+
+    time <-
+      df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$time_vars]
+    groups <-
+      df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$grouping_vars]
     
     motifs <-
       motif.discovery(
-        seq,
+        seqs,
         win = input$motif_window,
-        query,
         pct = input$motif_sample_pct,
-        thr = input$motif_correlation
+        thr = input$motif_correlation,
+        time = time,
+        group = groups,
+        nmotifs = input$motif_amount
       )
     return(motifs)
   })
@@ -1265,6 +1326,7 @@ server <- function(input, output, session) {
   motifs_discovery_segmented <- reactiveVal()
 
   observeEvent(input$run_motifs, {
+    req(segmentation_clusters())
     if (input$df_vars_motifs == "none") {
       return(NULL)
     }
@@ -1277,19 +1339,20 @@ server <- function(input, output, session) {
     # Temporally retrieving reactive values for future
     df_vars_motifs <- input$df_vars_motifs
     df_sequence_motifs <- input$df_sequence_motifs
-    df_query_motifs <- input$df_query_motifs
     motif_window <- input$motif_window
     motif_sample_pct <- input$motif_sample_pct
     motif_correlation <- input$motif_correlation
+    motif_amount <- input$motif_amount
 
     future(seed=TRUE, {
       motif.list <- motifs.per.segment(segments.all,
                                      df_vars_motifs,
                                      df_sequence_motifs,
-                                     df_query_motifs,
+                                     NULL,
                                      motif_window,
                                      motif_sample_pct,
-                                     motif_correlation)
+                                     motif_correlation,
+                                     motif_amount)
       progress$close()
       motif.list
     }) %...>% motifs_discovery_segmented()
@@ -1297,7 +1360,9 @@ server <- function(input, output, session) {
 
   causality_discovered <- reactiveVal()
 
-  observeEvent(input$run_correlation, {
+  cor_group <- reactiveVal()
+
+  observeEvent(input$run_causal, {
     req(input$df_query_causality)
     req(input$df_sequence_causality)
     req(df_process())
@@ -1314,13 +1379,19 @@ server <- function(input, output, session) {
     lags_corr_range <- input$lags_corr_range
     df_sequence_causality <- input$df_sequence_causality
 
+    cor_group(calc.cor(df,
+                          df_query_causality,
+                          df_sequence_causality))
+
     causality.list <- causality.global(df,
                           df_query_causality,
                           pval_corr_range,
                           lags_corr_range,
                           df_sequence_causality,
                           progress = progress)
+
     progress$close()
+
     causality_discovered(causality.list)
   })
 
@@ -1416,7 +1487,7 @@ server <- function(input, output, session) {
   })
 
   plot_motifs <- reactive({
-    return(motifs_discovery())
+    return(req(motifs_discovery()))
   })
   
   plot_motifs_segmented <- reactive({
@@ -1546,6 +1617,14 @@ server <- function(input, output, session) {
     return(p)
   })
 
+  plot_cor <- reactive({
+    validate(
+      need(cor_group(), "\nPlease, run 'Causality Analysis' to continue."
+      )
+    )
+    return(chart.Correlation(cor_group(), histogram=TRUE, pch="+"))
+  })
+
   plot_causality_pc <- reactive({
     validate(
       need(causality_discovered(), "\nPlease, run 'Causality Analysis' to continue."
@@ -1553,7 +1632,6 @@ server <- function(input, output, session) {
     )
     causality.plot(causality_discovered()[[1]],
                       input$perc_corr_range,
-                      input$size_corr_range,
                       input$df_query_causality)
   })
 
@@ -1564,7 +1642,6 @@ server <- function(input, output, session) {
     )
     causality.plot(causality_discovered()[[2]],
                       input$perc_corr_range,
-                      input$size_corr_range,
                       input$df_query_causality)
   })
 
@@ -1575,7 +1652,6 @@ server <- function(input, output, session) {
     )
     causality.plot(causality_discovered()[[3]],
                       input$perc_corr_range,
-                      input$size_corr_range,
                       input$df_query_causality)
   })
   
@@ -1584,46 +1660,46 @@ server <- function(input, output, session) {
   })
   
   plot_width <- reactive ({
-    600
+    input$plot_width
   })
   plot_height <- reactive ({
-    300
+    input$plot_height
   })
   plot_height_spec <- reactive ({
-    300 * 3
+    input$plot_height * 3
   })
   plot_height_motif <- reactive ({
-    300 * 1.75
+    input$plot_height * 1.75
   })
   
   output$plot_segments <-
     renderPlotly({
-      plot_segments()
+      plot_segments_ly()
     })
   
   output$plot_spectrum <-
     renderPlotly({
-      plot_spectrum()
+      ggplotly(plot_spectrum(), width = 600)
     })
 
   output$plot_spectrum_segments <-
     renderPlotly({
-      plot_spectrum_segments()
+      ggplotly(plot_spectrum_segments(), width = 600)
     })
   
   output$plot_heatmap <-
-    renderPlot(height = plot_height, {
+    renderPlot(width = plot_width, height = plot_height, {
       plot_heatmap()
     })
 
   output$plot_heatmap_segment <-
-    renderPlot(height = plot_height_spec, {
+    renderPlot(width = plot_width, height = plot_height, {
       plot_heatmap_segment()
     })
   
   output$plot_individual <-
     renderPlotly({
-      plot_individual()
+      ggplotly(plot_individual(), width = 600)
     })
   
   output$table_segments <- renderDataTable({
@@ -1640,109 +1716,271 @@ server <- function(input, output, session) {
   
   output$plot_motifs_a <-
     renderPlot(width = plot_width, height = plot_height, {
-      plot(tsmp::as.matrixprofile(plot_motifs()))
+      plot(tsmp::as.matrixprofile(plot_motifs()[[1]]))
     })
   
   output$plot_motifs_b <-
-    renderPlot(width = plot_width, height = plot_height_motif, {
-      plot(tsmp::motifs(plot_motifs()))
+    renderPlot(width = plot_width, height = plot_height, {
+      plot(tsmp::motifs(plot_motifs()[[1]]))
     })
   
   output$plot_motifs_c <-
-    renderPlot(width = plot_width, height = plot_height_motif, {
-      plot(tsmp::discords(plot_motifs()))
+    renderPlot(width = plot_width, height = plot_height, {
+      plot(tsmp::discords(plot_motifs()[[1]]))
     })
   
   output$plot_morlet <-
-    renderPlot(width = plot_width, height = plot_height_motif, {
+    renderPlot(width = plot_width, height = plot_height, {
       plot_morlet()
     })
   
   output$plot_velocities <-
     renderPlotly({
-      plot_velocities()
+      ggplotly(plot_velocities(), width = 600)
     })
 
   output$plot_velocities_segment <-
     renderPlotly({
-      plot_velocities_segment()
+      ggplotly(plot_velocities_segment(), width = 600)
     })
 
   output$plot_velocities_heat <-
-    renderPlot(height = plot_height, {
+    renderPlot(width = plot_width, height = plot_height, {
       plot_velocities_heat()
     })
 
   output$plot_velocities_heat_segment <-
-    renderPlot(height = plot_height_spec, {
+    renderPlot(width = plot_width, height = plot_height, {
       plot_velocities_heat_segment()
     })
 
   output$plot_msd <-
     renderPlotly({
-      plot_msd()
+      ggplotly(plot_msd(), width = 600)
     })
 
   output$plot_msd_segment <-
     renderPlotly({
-      plot_msd_segment()
+      ggplotly(plot_msd_segment(), width = 600)
     })
-  
+
+  output$plot_cor <-
+    renderPlot(width = plot_width, height = plot_height, {
+      plot_cor()
+    })
+
   output$summ_spectrum <- renderPrint({
     spectrum_significance()
   })
-  
+
   output$summ_velocities <- renderPrint({
     velocities_significance()
   })
-  
+
   output$tabs_motifs <- renderUI({
     seg.toplot <- req(plot_motifs_segmented())
+    range <- c(1, 180)
     for (i in 1:length(seg.toplot)) {
       local({
         my_i <- i
         plt_discord <-
           paste("plot_segment_discord_", my_i, sep = "")
-        
+
         output[[plt_discord]] <-
-          renderPlot(width = plot_width, {
-            plot(tsmp::discords(plot_motifs_segmented()[[my_i]]))
+          renderPlot(width = plot_width, height = plot_height, {
+            plot(tsmp::discords(seg.toplot[[my_i]][[1]]))
           })
-        
+
+        plt_dur_discord <-
+          paste("plot_location_discord_", my_i, sep = "")
+
+        output[[plt_dur_discord]] <-
+          renderPlotly({
+            ggplotly(locations.motifs.plot(seg.toplot[[my_i]][[3]]), width = 600, height = 200)
+          })
+
         plt_motif <- paste("plot_segment_motifs_", my_i, sep = "")
-        
-        output[[plt_motif]] <- renderPlot(width = plot_width, {
-          plot(tsmp::motifs(plot_motifs_segmented()[[my_i]]))
+
+        output[[plt_motif]] <- renderPlot(width = plot_width, height = plot_height, {
+          plot(tsmp::motifs(seg.toplot[[my_i]][[1]]))
         })
+
+        plt_dur_motif <-
+          paste("plot_location_motifs_", my_i, sep = "")
+
+        output[[plt_dur_motif]] <-
+          renderPlotly({
+            ggplotly(locations.motifs.plot(seg.toplot[[my_i]][[2]]), width = 600, height = 200)
+          })
       })
     }
     plot_output_list <- lapply(1:length(seg.toplot), function(i) {
       tabPanel(paste("Segment ", i, sep = ""),
                plotOutput(paste("plot_segment_motifs_", i, sep = "")),
-               plotOutput(paste("plot_segment_discord_", i, sep = "")))
+               plotlyOutput(paste("plot_location_motifs_", i, sep = ""), height = "auto"),
+               plotOutput(paste("plot_segment_discord_", i, sep = "")),
+               plotlyOutput(paste("plot_location_discord_", i, sep = "")), height = "auto")
     })
-    
+
     do.call(tabsetPanel, plot_output_list)
   })
 
   output$plot_vlgc_corr <-
-    renderPlot(width = 600, height = 600, {
-      plot_causality_vlgc()
-    })
+    renderForceNetwork(plot_causality_vlgc())
 
   output$plot_pc_corr <-
-    renderPlot(width = 600, height = 600, {
-      plot_causality_pc()
-    })
+    renderForceNetwork(plot_causality_pc())
 
   output$plot_vlte_corr <-
-    renderPlot(width = 600, height = 600, {
-      plot_causality_vlte()
-    })
+    renderForceNetwork(plot_causality_vlte())
+
+  output$downSegm <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Segments.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_segments())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downSpec <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_spectrum())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downSpecSeg <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_spectrum_segments())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downSpecH <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_heatmap())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downSpecSegH <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_heatmap_segment())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downVel <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Velocities.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_velocities())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downVelSeg <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Velocities.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_velocities_segment())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downVelH <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Velocities.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_velocities_heat())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downVelSegH <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Velocities.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_velocities_heat_segment())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downMSD <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_MSD.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_msd())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downMSDSeg <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_MSD.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_msd_segment())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
+
+  output$downIndiv <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_MSD.pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
+      plot(plot_individual())
+      dev.off()
+    },
+    contentType = "application/pdf"
+  )
   
   output$downMP <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_MatrixProfile.pdf", sep = "")
+      paste("ChroMo_", Sys.time(), "_MatrixProfile.pdf", sep = "")
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
@@ -1754,7 +1992,7 @@ server <- function(input, output, session) {
 
   output$downMotif <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_Motifs.pdf", sep = "")
+      paste("ChroMo_", Sys.time(), "_Motifs.pdf", sep = "")
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
@@ -1766,7 +2004,7 @@ server <- function(input, output, session) {
 
   output$downDiscord <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_Discords.pdf", sep = "")
+      paste("ChroMo_", Sys.time(), "_Discords.pdf", sep = "")
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
@@ -1777,8 +2015,8 @@ server <- function(input, output, session) {
   )
 
   output$downSpecgram <- downloadHandler(
-    filename <- function() {
-      paste("Tronos_", Sys.time(), "_Specgram.pdf", sep = "")
+    filename <- function() {data:image
+      paste("ChroMo_", Sys.time(), "_Specgram.pdf", sep = "")
     },
     content <- function(file) {
       plot_morlet()
@@ -1790,43 +2028,49 @@ server <- function(input, output, session) {
 
   output$downPC <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_Causation_PC.pdf", sep = "")
+      paste("ChroMo_Causation_PC.html", sep = "")
     },
     content <- function(file) {
-      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(plot_causality_pc())
-      dev.off()
+      saveNetwork(plot_causality_pc() %>%
+        htmlwidgets::prependContent(
+          htmltools::tags$h1("Peter-Clark algorithm directed graph")
+        ),
+      file, selfcontained = TRUE)
     },
-    contentType = "application/pdf"
+    contentType = "text/html"
   )
 
   output$downVLTE <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_Causation_PC.pdf", sep = "")
+      paste("ChroMo_Causation_VLTE.html", sep = "")
     },
     content <- function(file) {
-      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(plot_causality_vlte())
-      dev.off()
+      saveNetwork(plot_causality_vlte() %>%
+        htmlwidgets::prependContent(
+          htmltools::tags$h1("Variable Lag Transfer Entropy directed graph")
+        ),
+      file, selfcontained = TRUE)
     },
-    contentType = "application/pdf"
+    contentType = "text/html"
   )
 
   output$downVLGC <- downloadHandler(
     filename <- function() {
-      paste("Tronos_", Sys.time(), "_Causation_PC.pdf", sep = "")
+      paste("ChroMo_Causation_VLGC.html", sep = "")
     },
     content <- function(file) {
-      pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(plot_causality_vlgc())
-      dev.off()
+      saveNetwork(plot_causality_vlgc() %>%
+        htmlwidgets::prependContent(
+          htmltools::tags$h1("Variable Lag Granger Causality directed graph")
+        ),
+      file, selfcontained = TRUE)
     },
-    contentType = "application/pdf"
+    contentType = "text/html"
   )
 
   output$downCSV <- downloadHandler(
     filename <- function() {
-      paste("Tronos_data.csv", sep = "")
+      paste("ChroMo_data.csv", sep = "")
     },
     content <- function(file) {
       write.csv(df_normalized(), file, row.names = FALSE)

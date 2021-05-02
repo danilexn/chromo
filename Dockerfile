@@ -43,6 +43,9 @@ RUN R -e "if (!requireNamespace ('BiocManager', quietly = TRUE)) { install.packa
 RUN R -e "BiocManager::install('graph'); BiocManager::install('RBGL')"
 RUN sudo apt-get update -y; sudo apt-get install -y libglpk-dev
 RUN R -e "install.packages('igraph'); install.packages('pcalg')"
+RUN R -e "install.packages('networkD3')"
+RUN R -e "install.packages('PerformanceAnalytics')"
+
 RUN addgroup --system app \
     && adduser --system --ingroup app app
 
