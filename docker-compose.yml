@@ -10,11 +10,11 @@ services:
     volumes:
       - ./net/nginx.conf:/etc/nginx/nginx.conf
   shiny:
-    image: danilexn/tronos-base:latest
+    image: tronos-shiny:latest
     container_name: shiny
     restart: unless-stopped
     expose:
       - 3838
     volumes:
-      - ./src/:/srv/shiny-server/tronos
+      - ./app/:/srv/shiny-server/tronos
       - ./net/shiny-server.conf:/etc/shiny/shiny-server.conf

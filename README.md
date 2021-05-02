@@ -8,7 +8,12 @@
 ## Running ChroMo
 
 Clone the repository in your local computer or server
+<<<<<<< HEAD
 <code>git clone https://github.com/danilexn/chromo</code>
+=======
+
+<code>git clone https://github.com/danilexn/tronos-shiny</code>
+>>>>>>> b300e1cb9c641b97f96b5204623293f0e345c572
 
 <code>cd chromo</code>
 
@@ -21,6 +26,10 @@ Clone the repository in your local computer or server
 Now, open a browser at http://127.0.0.1:8080, and the application should be ready
 
 ### ...with docker-compose
+<<<<<<< HEAD
+=======
+<code>docker build -t tronos-shiny .</code>
+>>>>>>> b300e1cb9c641b97f96b5204623293f0e345c572
 
 <code>sudo docker-compose up -d</code>
 
