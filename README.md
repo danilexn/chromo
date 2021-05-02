@@ -17,7 +17,7 @@ Clone the repository in your local computer or server
 
 <code>docker build -t chromo .</code>
 
-<code>docker run -p 127.0.0.1:8080:3838 chromo
+<code>docker run -p 127.0.0.1:8080:3838 chromo</code>
 
 Now, open a browser at http://127.0.0.1:8080, and the application should be ready
 
