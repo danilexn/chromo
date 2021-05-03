@@ -49,14 +49,15 @@ RUN R -e "install.packages('PerformanceAnalytics')"
 RUN addgroup --system app \
     && adduser --system --ingroup app app
 
-WORKDIR /home/app
+WORKDIR /home/chromo
 
-COPY app .
+COPY app app
+COPY examples examples
 
-RUN chown app:app -R /home/app
+RUN chown app:app -R /home/chromo
 
 USER app
 
 EXPOSE 3838
 
-CMD ["R", "-e", "shiny::runApp('/home/app', host = '0.0.0.0', port = 3838)"]
+CMD ["R", "-e", "shiny::runApp('/home/chromo/app', host = '0.0.0.0', port = 3838)"]
