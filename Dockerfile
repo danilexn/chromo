@@ -1,6 +1,6 @@
 FROM cyversevice/shiny-geospatial
 
-LABEL maintainer="danilexn <daniel@ilerod.com>"
+LABEL maintainer="Daniel Leon Perinan <dleoper@upo.es>"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
