@@ -1,0 +1,53 @@
+proxy:
+  title: ChroMo Cloud
+  logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+  landing-page: /
+  favicon-path: favicon.ico
+  heartbeat-rate: 300000
+  heartbeat-timeout: 60000
+  port: 8080
+  bind-address: 127.0.0.1
+  authentication: none
+  admin-groups: admins
+  container-wait-time: 20000
+  # Docker configuration
+  docker:
+    cert-path: /home/none
+    url: http://localhost:2375
+    port-range-start: 20000
+    container-memory-limit: "1g"
+    container-cpu-limit: 0.35 
+  specs:
+  - id: 01_chromo
+    display-name: ChroMo S 
+    description: Small-tier container
+    container-image: danilexn/chromo-s:latest
+    container-cpu-limit: 0.25
+    container-memory: "256m"
+    logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+  - id: 02_chromo
+    display-name: ChroMo M
+    description: Medium-tier container
+    container-image: danilexn/chromo-m:latest
+    container-cpu-limit: 0.5
+    container-memory: "512m"
+    logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+  - id: 03_chromo
+    display-name: ChroMo L
+    description: Large(r)-tier container
+    container-image: danilexn/chromo-l:latest
+    container-cpu-limit: 0.75
+    container-memory: "1g"
+    logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+logging:
+  file:
+    shinyproxy.log
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 100MB
+server:
+  servlet.session.timeout: 0
+  useForwardHeaders: true
