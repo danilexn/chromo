@@ -1,5 +1,5 @@
 # ChroMo
-
+[![Docker](https://github.com/danilexn/chromo/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/danilexn/chromo/actions/workflows/docker-publish.yml)
 ## Prerequisites
 
 - Docker
