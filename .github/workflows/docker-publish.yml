@@ -9,6 +9,11 @@ on:
     # Publish `v1.2.3` tags as releases.
     tags:
       - v*
+      
+    # Only when certain path is modified
+    paths:
+     - 'Dockerfile'
+     - 'app/'
 
   # Run tests for any PRs.
   pull_request:
