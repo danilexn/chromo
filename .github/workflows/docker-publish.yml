@@ -14,6 +14,15 @@ on:
     paths:
      - 'Dockerfile'
      - 'app/**'
+  # For manually running
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
 
   # Run tests for any PRs.
   pull_request:
