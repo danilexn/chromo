@@ -46,9 +46,23 @@ segmentation.significance <- function(segments, method, p.correct) {
     anova(mod.3, mod.4, test = method)
 }
 
-spectrum.significance <- function(df_freqs, particle_vars) {
-    m1.r <- lm(spec.s ~ spec.f * sym(particle_vars), data = df_freqs)
-    m3.r <- lm(spec.s ~ spec.f, data = df_freqs)
+spectrum.significance <-
+    function(df_freqs,
+             range) {
+        df_freqs <- df_freqs %>% mutate(spec.f = spec.f / max(spec.f)) %>%
+            filter(spec.f < range[2], spec.f > range[1])
 
-    return(anova(m1.r, m3.r)[[6]][2])
-}
+        m1.r <-
+            glm(factor(group) ~ spec.f * spec.s ,
+                data = df_freqs,
+                family = "binomial")
+        m2.r <-
+            glm(factor(group) ~ spec.f + spec.s ,
+                data = df_freqs,
+                family = "binomial")
+        m3.r <-
+            glm(factor(group) ~ 1 ,
+                data = df_freqs,
+                family = "binomial")
+        anova(m1.r, m2.r, m3.r, test = "Chisq")
+    }

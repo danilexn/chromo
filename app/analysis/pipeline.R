@@ -280,29 +280,6 @@ spectrogram.per.segment <-
         return(df.spec)
     }
 
-
-
-spectrum.significance <-
-    function(df_freqs,
-             range) {
-        df_freqs <- df_freqs %>% mutate(spec.f = spec.f / max(spec.f)) %>%
-            filter(spec.f < range[2], spec.f > range[1])
-
-        m1.r <-
-            glm(factor(group) ~ spec.f * spec.s ,
-                data = df_freqs,
-                family = "binomial")
-        m2.r <-
-            glm(factor(group) ~ spec.f + spec.s ,
-                data = df_freqs,
-                family = "binomial")
-        m3.r <-
-            glm(factor(group) ~ 1 ,
-                data = df_freqs,
-                family = "binomial")
-        anova(m1.r, m2.r, m3.r, test = "Chisq")
-    }
-
 spectrum.per.segment <-
     function(df.segm,
              coord,
