@@ -6,6 +6,11 @@ null.if.empty <- function(x) {
     return(x)
 }
 
+is.empty.or.except <- function(x) {
+    try(return(is.empty(x)))
+    return(TRUE)
+}
+
 sourceFolder <- function(folder, recursive = FALSE, ...)
 {
     files <- list.files(folder, pattern = "[.][rR]$",

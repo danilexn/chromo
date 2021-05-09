@@ -1,4 +1,4 @@
-chromo.ui.sidebar.segment <-
+chromo.ui.sidebar.segment <- function(request) {
                  conditionalPanel(
                    condition = "input.tabs=='Segments'",
                    
@@ -156,3 +156,4 @@ chromo.ui.sidebar.segment <-
                    ),
                    NULL
                  )
+}

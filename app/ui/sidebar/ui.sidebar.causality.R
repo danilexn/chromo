@@ -1,4 +1,5 @@
-chromo.ui.sidebar.causality <- conditionalPanel(
+chromo.ui.sidebar.causality <- function(request) {
+              conditionalPanel(
                    condition = "input.tabs=='Causality'",
                    h4("Causality analysis"),
                    selectizeInput(
@@ -43,3 +44,4 @@ chromo.ui.sidebar.causality <- conditionalPanel(
                     hr(),
                     actionButton('run_causal', 'Run causality analysis')
                  )
+}

@@ -1,4 +1,4 @@
-chromo.ui.sidebar.upload <-
+chromo.ui.sidebar.upload <- function(request) {
                  conditionalPanel(
                    condition = "input.tabs=='Data upload'",
                    h4("Data upload"),
@@ -165,3 +165,4 @@ chromo.ui.sidebar.upload <-
                           )
                    )
                  )
+}

@@ -3,7 +3,7 @@ source("ui/panel/ui.panel.main.R")
 
 appName <- 'ChroMo'
 
-ui <-
+ui <- function(request) {
   navbarPage(
     windowTitle = appName,
     title=div(style = "position: relative; top: -5px;", img(height = "35px", src='logo.png'), HTML(paste0('<b>',appName,'</b>'))),
@@ -12,7 +12,7 @@ ui <-
     theme = shinytheme("lumen"),
     tabPanel("Analysis", icon = icon("calculator"),
              sidebarLayout(
-               chromo.sidebar,
+               chromo.sidebar(request),
                chromo.mainpanel
                )
              ),
@@ -27,3 +27,4 @@ ui <-
                mainPanel(includeHTML("about.html"))
              ))
   )
+}

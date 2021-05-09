@@ -4,25 +4,14 @@ vals <- reactiveValues(count = 0)
 
 server <- function(input, output, session) {
   isolate(vals$count <- vals$count + 1)
-  vals$Datum <- FALSE
-  
-  observeEvent(input$change_scale, {
-    if (input$change_scale == TRUE)  {
-      updateCheckboxInput(session, "change_scale2", value = TRUE)
-    } else if (input$change_scale == FALSE)   {
-      updateCheckboxInput(session, "change_scale2", value = FALSE)
-    }
-  })
-  
-  observeEvent(input$change_scale2, {
-    if (input$change_scale2 == TRUE)  {
-      updateCheckboxInput(session, "change_scale", value = TRUE)
-    } else if (input$change_scale2 == FALSE)   {
-      updateCheckboxInput(session, "change_scale", value = FALSE)
-    }
-  })
-  
   fileUploaded <- FALSE
+  setBookmarkExclude(c("run_segmentation", "run_msd", "run_motifs", "run_causal", "run_spectrum", "run_velocities"))
+  restore_segment_variables <- reactiveVal()
+  restore_df_vars_motifs <- reactiveVal()
+  restore_df_query_causality <- reactiveVal()
+  restore_df_sequence_motifs <- reactiveVal()
+  restore_df_sequence_causality <- reactiveVal()
+  
   # Input data upload
   df_upload <- reactive({
     data <- NULL
@@ -201,18 +190,25 @@ server <- function(input, output, session) {
       "grouping_vars"
     )
 
-    input_names_cols_calc <- c(
-      "cols_individual_plot",
-      "multiv_variables",
-      "df_vars_motifs",
-      "segment_variables",
-      "df_query_causality"
-    )
-
     for (u in input_names_cols) {
       updateSelectizeInput(session, u,
                            choices = var_list)
     }
+  })
+
+  observe({
+    if (is.null(df_upload())) {
+      return()
+    }
+    var_names  <- names(df_upload())
+    var_list <- c("none", var_names)
+
+    input_names_cols_calc <- c(
+      "cols_individual_plot",
+      "df_vars_motifs",
+      "segment_variables",
+      "df_query_causality"
+    )
 
     if (input$calc_veloc) {
       var_list <- c(var_list,
@@ -228,6 +224,22 @@ server <- function(input, output, session) {
     for (u in input_names_cols_calc) {
       updateSelectizeInput(session, u,
                            choices = var_list)
+    }
+
+    # Update values when bookmarked state is available
+    if(!is.empty.or.except(restore_segment_variables())) {
+      updateSelectizeInput(session, "segment_variables",
+                           selected = restore_segment_variables())
+    }
+
+    if(!is.empty.or.except(restore_df_vars_motifs())) {
+      updateSelectizeInput(session, "df_vars_motifs",
+                           selected = restore_df_vars_motifs())
+    }
+
+    if(!is.empty.or.except(restore_df_query_causality())) {
+      updateSelectizeInput(session, "df_query_causality",
+                           selected = restore_df_query_causality())
     }
     
     # Find the coordinate variables
@@ -312,14 +324,26 @@ server <- function(input, output, session) {
                              choices = c("none", groups[, 1]),
                              selected = "none")
       }
+
+      if(!is.empty.or.except(restore_df_sequence_motifs())) {
+        selected_motifs <- restore_df_sequence_motifs()
+      } else {
+        selected_motifs <- groups[1, 1]
+      }
+
+      if(!is.empty.or.except(restore_df_sequence_causality())) {
+        selected_causality <- restore_df_sequence_causality()
+      } else {
+        selected_causality <- groups[1, 1]
+      }
       updateSelectizeInput(session,
                            "df_sequence_motifs",
                            choices = groups[, 1],
-                           selected = groups[1, 1])
+                           selected = selected_motifs)
       updateSelectizeInput(session,
                            "df_sequence_causality",
                            choices = groups[, 1],
-                           selected = groups[1, 1])
+                           selected = selected_causality)
     }
   })
 
@@ -1307,6 +1331,44 @@ server <- function(input, output, session) {
   
   session$onSessionEnded(function() {
     isolate(vals$count <- vals$count - 1)
+  })
+
+  onBookmark(function(state) {
+    state$values$segmentation_raw <- segmentation_raw()
+    state$values$motifs_discovery_segmented <- motifs_discovery_segmented()
+    state$values$causality_discovered <- causality_discovered()
+    state$values$cor_group <- cor_group()
+    state$values$spectrum_global <- spectrum_global()
+    state$values$spectrogram_global <- spectrogram_global()
+    state$values$spectrum_segments <- spectrum_segments()
+    state$values$spectrogram_segments <- spectrogram_segments()
+    state$values$velocities_group <- velocities_group()
+    state$values$velocities_segment <- velocities_segment()
+    state$values$segmentation_clusters <- segmentation_clusters()
+    state$values$msd_group <- msd_group()
+    state$values$msd_segment <- msd_segment()
+  })
+
+  # Read values from state$values when we restore
+  onRestore(function(state) {
+    segmentation_raw(state$values$segmentation_raw)
+    motifs_discovery_segmented(state$values$motifs_discovery_segmented)
+    causality_discovered(state$values$causality_discovered)
+    cor_group(state$values$cor_group)
+    spectrum_global(state$values$spectrum_global)
+    spectrogram_global(state$values$spectrogram_global)
+    spectrum_segments(state$values$spectrum_segments)
+    spectrogram_segments(state$values$spectrogram_segments)
+    velocities_group(state$values$velocities_group)
+    velocities_segment(state$values$velocities_segment)
+    segmentation_clusters(state$values$segmentation_clusters)
+    msd_group(state$values$msd_group)
+    msd_segment(state$values$msd_segment)
+    restore_segment_variables(state$input$segment_variables)
+    restore_df_vars_motifs(state$input$df_vars_motifs)
+    restore_df_query_causality(state$input$df_query_causality)
+    restore_df_sequence_motifs(state$input$df_sequence_motifs)
+    restore_df_sequence_causality(state$input$df_sequence_causality)
   })
   
 }

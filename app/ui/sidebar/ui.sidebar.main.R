@@ -3,11 +3,15 @@ source("ui/sidebar/ui.sidebar.segment.R")
 source("ui/sidebar/ui.sidebar.motifs.R")
 source("ui/sidebar/ui.sidebar.causality.R")
 
-chromo.sidebar <- sidebarPanel(
+chromo.sidebar <- function(request) {
+              sidebarPanel(
                  width = 3,
-                 
-                 chromo.ui.sidebar.upload,
-                 chromo.ui.sidebar.segment,
-                 chromo.ui.sidebar.motifs,
-                 chromo.ui.sidebar.causality
+                 h4("Save analysis"),
+                 bookmarkButton(),
+                 hr(),
+                 chromo.ui.sidebar.upload(request),
+                 chromo.ui.sidebar.segment(request),
+                 chromo.ui.sidebar.motifs(request),
+                 chromo.ui.sidebar.causality(request)
                )
+}

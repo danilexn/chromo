@@ -1,4 +1,5 @@
-chromo.ui.sidebar.motifs <- conditionalPanel(
+chromo.ui.sidebar.motifs <- function(request) {
+              conditionalPanel(
                    condition = "input.tabs=='Motifs'",
                    h4("Motifs"),
                    h5("Discovery parameters"),
@@ -80,3 +81,4 @@ chromo.ui.sidebar.motifs <- conditionalPanel(
                    ),
                    NULL
                  )
+}

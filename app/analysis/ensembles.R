@@ -23,7 +23,6 @@ calc.msd.segment <- function(df, coords, k) {
 
 calc.cor <- function(df, vars, sel_group) {
     df_group <- df[df$group == sel_group, vars]
-    print(df_group)
     return(df_group)
 }
 

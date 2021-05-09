@@ -83,4 +83,4 @@ sourceFolder("calculators")
 options(shiny.maxRequestSize = 5 * 1024 ^ 2) # 5 Mb max.
 
 # Attach UI and Server components
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "server")
