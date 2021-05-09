@@ -388,13 +388,14 @@ server <- function(input, output, session) {
   })
 
 
-  segmentation_calc <- reactive({
+  segmentation_calc <- reactiveVal()
+  observe({
     segments <- clusterize.segments(req(segmentation_raw()[[1]]),
                                     input$grouping_vars,
                                     input$particle_vars,
                                     segments = input$seg_range)
     segmentation_clusters(create.df.clusters(segments, segmentation_raw()[[2]]))
-    return(segments)
+    segmentation_calc(segments)
   })
 
   plot_individual <- reactive({
@@ -544,7 +545,8 @@ server <- function(input, output, session) {
     return(t)
   })
   
-  motifs_discovery <- reactive({
+  motifs_discovery <- reactiveVal()
+  observe({
     if (input$df_vars_motifs == "none") {
       return(NULL)
     }
@@ -568,7 +570,7 @@ server <- function(input, output, session) {
         group = groups,
         nmotifs = input$motif_amount
       )
-    return(motifs)
+    motifs_discovery(motifs)
   })
   
   motifs_discovery_segmented <- reactiveVal()
@@ -1336,6 +1338,7 @@ server <- function(input, output, session) {
   onBookmark(function(state) {
     state$values$segmentation_raw <- segmentation_raw()
     state$values$motifs_discovery_segmented <- motifs_discovery_segmented()
+    state$values$motifs_discovery <- motifs_discovery()
     state$values$causality_discovered <- causality_discovered()
     state$values$cor_group <- cor_group()
     state$values$spectrum_global <- spectrum_global()
@@ -1345,6 +1348,7 @@ server <- function(input, output, session) {
     state$values$velocities_group <- velocities_group()
     state$values$velocities_segment <- velocities_segment()
     state$values$segmentation_clusters <- segmentation_clusters()
+    state$values$segmentation_calc <- segmentation_calc()
     state$values$msd_group <- msd_group()
     state$values$msd_segment <- msd_segment()
   })
@@ -1353,6 +1357,7 @@ server <- function(input, output, session) {
   onRestore(function(state) {
     segmentation_raw(state$values$segmentation_raw)
     motifs_discovery_segmented(state$values$motifs_discovery_segmented)
+    motifs_discovery(state$values$motifs_discovery)
     causality_discovered(state$values$causality_discovered)
     cor_group(state$values$cor_group)
     spectrum_global(state$values$spectrum_global)
@@ -1362,6 +1367,7 @@ server <- function(input, output, session) {
     velocities_group(state$values$velocities_group)
     velocities_segment(state$values$velocities_segment)
     segmentation_clusters(state$values$segmentation_clusters)
+    segmentation_calc(state$values$segmentation_calc)
     msd_group(state$values$msd_group)
     msd_segment(state$values$msd_segment)
     restore_segment_variables(state$input$segment_variables)

@@ -23,8 +23,9 @@ proxy:
     description: Small-tier container
     container-image: danilexn/chromo-s:latest
     container-cpu-limit: 0.25
-    container-memory: "256m"
+    container-memory: "512m"
     logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+    container-volumes: [ "~/bookmarks:/home/chromo/app/shiny_bookmarks"]
   - id: 02_chromo
     display-name: ChroMo M
     description: Medium-tier container
@@ -32,6 +33,7 @@ proxy:
     container-cpu-limit: 0.5
     container-memory: "512m"
     logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+    container-volumes: [ "~/bookmarks:/home/chromo/app/shiny_bookmarks"]
   - id: 03_chromo
     display-name: ChroMo L
     description: Large(r)-tier container
@@ -39,6 +41,7 @@ proxy:
     container-cpu-limit: 0.75
     container-memory: "1g"
     logo-url: https://i.postimg.cc/BbjfNZsP/logo.png
+    container-volumes: [ "~/bookmarks:/home/chromo/app/shiny_bookmarks"]
 logging:
   file:
     shinyproxy.log
