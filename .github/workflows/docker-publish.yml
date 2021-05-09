@@ -13,7 +13,16 @@ on:
     # Only when certain path is modified
     paths:
      - 'Dockerfile'
-     - 'app/'
+     - 'app/**'
+  # For manually running
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
 
   # Run tests for any PRs.
   pull_request:
@@ -25,29 +34,29 @@ env:
 jobs:
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    runs-on: ubuntu-latest
+  #test:
+  #  runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
+  #  steps:
+  #    - uses: actions/checkout@v2
 
-      - name: Run tests
-        run: |
-          if [ -f docker-compose.test.yml ]; then
-            docker-compose --file docker-compose.test.yml build
-            docker-compose --file docker-compose.test.yml run sut
-          else
-            docker build . --file Dockerfile
-          fi
+  #    - name: Run tests
+  #      run: |
+  #        if [ -f docker-compose.test.yml ]; then
+  #          docker-compose --file docker-compose.test.yml build
+  #          docker-compose --file docker-compose.test.yml run sut
+  #        else
+  #          docker build . --file Dockerfile
+  #        fi
 
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
   push:
     # Ensure test job passes before pushing image.
-    needs: test
+    # needs: test
 
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    # if: github.event_name == 'push'
 
     permissions:
       contents: read
