@@ -548,11 +548,7 @@ server <- function(input, output, session) {
     return(t)
   })
   
-<<<<<<< HEAD
   motifs_discovery <- reactiveVa()
-=======
-  motifs_discovery <- reactiveVal()
->>>>>>> 7004da472f55f46595aedfe9c243fbed66ad132f
   observe({
     if (input$df_vars_motifs == "none") {
       return(NULL)
