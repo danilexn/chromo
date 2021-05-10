@@ -29,7 +29,7 @@ chromo.ui.sidebar.causality <- function(request) {
                     ),
                    sliderInput(
                       "lags_corr_range",
-                      label = "Maximudm lags to explore",
+                      label = "Maximum lags to explore",
                       min = 0,
                       max = 50,
                       value = c(10)

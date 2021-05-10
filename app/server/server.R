@@ -553,6 +553,11 @@ server <- function(input, output, session) {
     if (input$df_vars_motifs == "none") {
       return(NULL)
     }
+
+    if (!all(sapply(df_normalized()[,input$df_vars_motifs], is.numeric))) {
+        showNotification("Only numeric columns can be analyzed.", type = "error")
+        return(NULL)
+    }
     
     df <- df_normalized()
     seqs <-
@@ -579,9 +584,17 @@ server <- function(input, output, session) {
   motifs_discovery_segmented <- reactiveVal()
 
   observeEvent(input$run_motifs, {
+    if(is.empty(segmentation_clusters())) {
+      showNotification("You have to run a segmentation, first!", type = "error")
+    }
     req(segmentation_clusters())
     if (input$df_vars_motifs == "none") {
       return(NULL)
+    }
+
+    if (!all(sapply(df_normalized()[,input$df_vars_motifs], is.numeric))) {
+        showNotification("Only numeric columns can be analyzed.", type = "error")
+        return(NULL)
     }
 
     progress <- Progress$new(session)
@@ -619,6 +632,11 @@ server <- function(input, output, session) {
     req(input$df_query_causality)
     req(input$df_sequence_causality)
     req(df_process())
+
+    if (!all(sapply(df_process()[,input$df_query_causality], is.numeric))) {
+        showNotification("Only numeric columns can be analyzed.", type = "error")
+        return()
+    }
 
     segments.all <- segmentation_clusters()
     df <- df_process()
