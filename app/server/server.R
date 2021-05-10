@@ -548,7 +548,7 @@ server <- function(input, output, session) {
     return(t)
   })
   
-  motifs_discovery <- reactiveVa()
+  motifs_discovery <- reactiveVal()
   observe({
     if (input$df_vars_motifs == "none") {
       return(NULL)
