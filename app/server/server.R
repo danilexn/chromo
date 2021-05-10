@@ -71,7 +71,10 @@ server <- function(input, output, session) {
   df_normalized <- reactive ({
     cols_normalize <- input$cols_normalize
     if (input$norm_type != "none" && length(cols_normalize) > 0) {
-      if (input$norm_type == "max") {
+      if (!all(sapply(df_selected()[,cols_normalize], is.numeric))) {
+        showNotification("Only numeric columns can be normalized.", type = "error")
+        norm_temp <- df_selected()
+      } else if (input$norm_type == "max") {
         norm_temp <-
           df_selected() %>% group_by(!!sym(input$particle_vars)) %>%
           mutate_at(cols_normalize, normalize.max)
@@ -97,6 +100,9 @@ server <- function(input, output, session) {
     }
     # Add velocities if selected
     coords <- input$coord_vars
+    if (length(coords) != 2) {
+      showNotification("Only can work with 2D analysis.", type = "warning")
+    }
     if (input$calc_veloc && length(coords) == 2) {
       norm_temp <- norm_temp %>% group_by(!!sym(input$particle_vars), !!sym(input$grouping_vars)) %>%
                     mutate(ang.speed =
@@ -388,13 +394,14 @@ server <- function(input, output, session) {
   })
 
 
-  segmentation_calc <- reactive({
+  segmentation_calc <- reactiveVal()
+  observe({
     segments <- clusterize.segments(req(segmentation_raw()[[1]]),
                                     input$grouping_vars,
                                     input$particle_vars,
                                     segments = input$seg_range)
     segmentation_clusters(create.df.clusters(segments, segmentation_raw()[[2]]))
-    return(segments)
+    segmentation_calc(segments)
   })
 
   plot_individual <- reactive({
@@ -452,8 +459,7 @@ server <- function(input, output, session) {
   
   plot_spectrum <- reactive({
     validate(
-      need(spectrum_global(), "\n\n\nPlease, run 'Calculate Spectrum' to continue.\nNo data is available for global spectrum"
-      )
+      need(spectrum_global(), "")
     )
     p <- spectral.plot(
       spectrum_global(),
@@ -466,7 +472,7 @@ server <- function(input, output, session) {
 
   plot_spectrum_segments <- reactive({
     validate(
-      need(spectrum_segments(), "\n\n\n\nPlease, run 'Calculate Spectrum' to continue.\nNo data is available segmented spectrum"
+      need(spectrum_segments(), "\nPlease, run 'Calculate Spectrum' to continue."
       )
     )
     p <- spectral.plot.segments(
@@ -479,8 +485,7 @@ server <- function(input, output, session) {
 
   plot_heatmap <- reactive({
     validate(
-      need(spectrogram_global(), "\n\n\nPlease, run 'Calculate Spectrum' to continue."
-      )
+      need(spectrogram_global(), "")
     )
     p <- heatmap.plot(
       spectrogram_global(),
@@ -491,7 +496,7 @@ server <- function(input, output, session) {
 
   plot_heatmap_segment <- reactive({
     validate(
-      need(spectrogram_segments(), "\n\n\n\nPlease, run 'Calculate Spectrum' to continue."
+      need(spectrogram_segments(), "\nPlease, run 'Calculate Spectrum' to continue."
       )
     )
     p <- heatmap.segmented.plot(
@@ -503,8 +508,7 @@ server <- function(input, output, session) {
 
   plot_velocities_heat <- reactive({
     validate(
-      need(velocities_group(), "\n\n\nPlease, run 'Calculate Velocities' to continue."
-      )
+      need(velocities_group(), "")
     )
     p <- heatmap.veloc.plot(
       velocities_group()
@@ -514,7 +518,7 @@ server <- function(input, output, session) {
 
   plot_velocities_heat_segment <- reactive({
     validate(
-      need(velocities_segment(), "\n\n\nPlease, run 'Calculate Velocities' to continue."
+      need(velocities_segment(), "\nPlease, run 'Calculate Velocities' to continue."
       )
     )
     p <- heatmap.veloc.segmented.plot(
@@ -544,7 +548,8 @@ server <- function(input, output, session) {
     return(t)
   })
   
-  motifs_discovery <- reactive({
+  motifs_discovery <- reactiveVa()
+  observe({
     if (input$df_vars_motifs == "none") {
       return(NULL)
     }
@@ -568,7 +573,7 @@ server <- function(input, output, session) {
         group = groups,
         nmotifs = input$motif_amount
       )
-    return(motifs)
+    motifs_discovery(motifs)
   })
   
   motifs_discovery_segmented <- reactiveVal()
@@ -743,6 +748,10 @@ server <- function(input, output, session) {
   })
 
   spectrum_significance <- reactive({
+    validate(
+      need(spectrum_global(), "Please, run 'Calculate Spectrum' to continue."
+      )
+    )
     spec_signif <- spectrum.significance(
       spectrum_global(),
       input$spec_range
@@ -822,8 +831,7 @@ server <- function(input, output, session) {
   
   plot_velocities <- reactive({
     validate(
-      need(velocities_group(), "\n\n\nPlease, run 'Calculate Velocities' to continue."
-      )
+      need(velocities_group(), "")
     )
     p <- plot.velocities(
       velocities_group(),
@@ -834,7 +842,7 @@ server <- function(input, output, session) {
 
   plot_velocities_segment <- reactive({
     validate(
-      need(velocities_segment(), "\n\n\nPlease, run 'Calculate Velocities' to continue."
+      need(velocities_segment(), "\nPlease, run 'Calculate Velocities' to continue."
       )
     )
     p <- plot.velocities.segment(
@@ -845,8 +853,7 @@ server <- function(input, output, session) {
 
   plot_msd <- reactive({
     validate(
-      need(msd_group(), "\n\n\nPlease, run 'Calculate MSD' to continue."
-      )
+      need(msd_group(), "")
     )
     p <- plot.msd(
       msd_group()
@@ -856,7 +863,7 @@ server <- function(input, output, session) {
 
   plot_msd_segment <- reactive({
     validate(
-      need(msd_segment(), "\n\n\n\nPlease, run 'Calculate MSD' to continue."
+      need(msd_segment(), "\nPlease, run 'Calculate MSD' to continue."
       )
     )
     p <- plot.msd.segment(
@@ -904,6 +911,10 @@ server <- function(input, output, session) {
   })
   
   velocities_significance <- reactive({
+    validate(
+      need(velocities_group(), "Please, run 'Calculate Velocities' to continue."
+      )
+    )
     significant.velocities(velocities_group())
   })
   
@@ -1336,6 +1347,7 @@ server <- function(input, output, session) {
   onBookmark(function(state) {
     state$values$segmentation_raw <- segmentation_raw()
     state$values$motifs_discovery_segmented <- motifs_discovery_segmented()
+    state$values$motifs_discovery <- motifs_discovery()
     state$values$causality_discovered <- causality_discovered()
     state$values$cor_group <- cor_group()
     state$values$spectrum_global <- spectrum_global()
@@ -1345,6 +1357,7 @@ server <- function(input, output, session) {
     state$values$velocities_group <- velocities_group()
     state$values$velocities_segment <- velocities_segment()
     state$values$segmentation_clusters <- segmentation_clusters()
+    state$values$segmentation_calc <- segmentation_calc()
     state$values$msd_group <- msd_group()
     state$values$msd_segment <- msd_segment()
   })
@@ -1353,6 +1366,7 @@ server <- function(input, output, session) {
   onRestore(function(state) {
     segmentation_raw(state$values$segmentation_raw)
     motifs_discovery_segmented(state$values$motifs_discovery_segmented)
+    motifs_discovery(state$values$motifs_discovery)
     causality_discovered(state$values$causality_discovered)
     cor_group(state$values$cor_group)
     spectrum_global(state$values$spectrum_global)
@@ -1362,6 +1376,7 @@ server <- function(input, output, session) {
     velocities_group(state$values$velocities_group)
     velocities_segment(state$values$velocities_segment)
     segmentation_clusters(state$values$segmentation_clusters)
+    segmentation_calc(state$values$segmentation_calc)
     msd_group(state$values$msd_group)
     msd_segment(state$values$msd_segment)
     restore_segment_variables(state$input$segment_variables)

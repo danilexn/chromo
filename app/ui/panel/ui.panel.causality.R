@@ -2,7 +2,7 @@ chromo.ui.panel.causality <- tabPanel(
                      "Causality", icon = icon("connectdevelop"),
                      br(),
                      tabsetPanel(id = "tabcorrs",
-                        tabPanel("Global", icon = icon("layer-group"),
+                        tabPanel("PC-alg", icon = icon("project-diagram"),
                           br(),
                           fluidPage(
                             fluidRow(
@@ -11,7 +11,9 @@ chromo.ui.panel.causality <- tabPanel(
                             )
                           ),
                           withSpinner(forceNetworkOutput("plot_pc_corr", width = "600px", height = "600px")),
-                          hr(),
+                        ),
+                        tabPanel("VLTE", icon = icon("project-diagram"),
+                          br(),
                           fluidPage(
                             fluidRow(
                               column(4, h4("Variable Lag Transfer Entropy")),
@@ -19,7 +21,9 @@ chromo.ui.panel.causality <- tabPanel(
                             )
                           ),
                           withSpinner(forceNetworkOutput("plot_vlte_corr", width = "600px", height = "600px")),
-                          hr(),
+                        ),
+                        tabPanel("VLGC", icon = icon("project-diagram"),
+                          br(),
                           fluidPage(
                             fluidRow(
                               column(4, h4("Variable Lag Granger Causality")),
@@ -27,11 +31,12 @@ chromo.ui.panel.causality <- tabPanel(
                             )
                           ),
                           withSpinner(forceNetworkOutput("plot_vlgc_corr", width = "600px", height = "600px")),
-                          hr(),
+                        ),
+                        tabPanel("Correlation", icon = icon("chart-area"),
+                          br(),
                           fluidPage(
                             fluidRow(
                               column(4, h4("Correlation"))
-                              #column(1, downloadButton("downVLTE", "Download figure")),
                             )
                           ),
                           withSpinner(plotOutput("plot_cor", height = "auto"))
