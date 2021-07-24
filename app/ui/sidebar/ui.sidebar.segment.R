@@ -88,7 +88,15 @@ chromo.ui.sidebar.segment <- function(request) {
                      actionButton('run_spectrum', 'Calculate spectrum'),
                    ),
                    conditionalPanel(
-                     condition = "input.tabsegment == 'Velocities'",
+                     condition = "input.tabsegment == 'Densities'",
+                     h4("Densities"),
+                     selectizeInput(
+                      "density_variables",
+                      "Input column",
+                      choices = list("None" = "none"),
+                      multiple = FALSE,
+                      options = NULL
+                   ),
                      h5("Parameters"),
                      sliderInput(
                        "vel_ma",
@@ -98,11 +106,11 @@ chromo.ui.sidebar.segment <- function(request) {
                        value = 10
                      ),
                      checkboxInput(
-                       inputId = "velocities_individual",
+                       inputId = "densities_individual",
                        label = "Individual?",
                        value = FALSE
                      ),
-                     actionButton('run_velocities', 'Calculate Velocities'),
+                     actionButton('run_densities', 'Calculate Density'),
                    ),
                    conditionalPanel(
                      condition = "input.tabsegment == 'Displacement'",

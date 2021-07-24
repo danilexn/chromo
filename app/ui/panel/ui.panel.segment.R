@@ -41,29 +41,29 @@ chromo.ui.panel.segment <- tabPanel(
                           )
                         )
                       ),
-                      tabPanel("Velocities", icon = icon("tachometer-alt"),
+                      tabPanel("Densities", icon = icon("tachometer-alt"),
                         br(),
-                        tabsetPanel(id = "velocitytab",
+                        tabsetPanel(id = "densitytab",
                           tabPanel("Grouped plots",  icon = icon("layer-group"),
-                            h4("Velocity densities"),
+                            h4("Global densities"),
                             downloadButton("downVel", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities", height = "auto")),
                             hr(),
-                            h4("Velocity per segment"),
+                            h4("Density per segment"),
                             downloadButton("downVelSeg", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities_segment", height = "auto"))
                           ),
                           tabPanel("Heatmaps",  icon = icon("map"),
-                            h4("Velocity heatmaps"),
+                            h4("Global heatmaps"),
                             downloadButton("downVelH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat", height = "auto", width = 600)),
                             hr(),
-                            h4("Velocity heatmaps per segment"),
+                            h4("Heatmaps per segment"),
                             downloadButton("downVelSegH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat_segment", height = "auto", width = 600))
                           ),
                           tabPanel("Summary",  icon = icon("book"),
-                            h4("Velocities difference significance"),
+                            h4("Density difference significance"),
                             withSpinner(verbatimTextOutput("summ_velocities"))
                           )
                         )

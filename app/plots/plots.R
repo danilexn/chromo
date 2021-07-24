@@ -51,7 +51,7 @@ segmentation.plotly <- function(segments, grouping = "none") {
     partial_bundle(toWebGL(subplot(ggplotly(p1, height = 500), ggplotly(p2, height = 500), widths = c(0.7, 0.3), titleX=T)))
 }
 
-morlet.plot <- function(df, plot.var, sig = 0.95) {
+morlet.plot <- function(df, plot.var, sig = 0.95, ylab = "Y coordinate") {
     y <- df[[plot.var]]
     wave.out <-
         morlet(y,
@@ -63,7 +63,8 @@ morlet.plot <- function(df, plot.var, sig = 0.95) {
         wave.out,
         reverse.y = TRUE,
         key.cols = specCols,
-        useRaster = TRUE
+        useRaster = TRUE,
+        crn.lab = ylab
     )
 }
 
@@ -225,7 +226,7 @@ heatmap.segmented.plot <-
     }
 
 heatmap.veloc.plot <-
-    function(df_vel) {
+    function(df_vel, colname="Velocity") {
         names(df_vel)[names(df_vel) == "group"] <- 'label.chromo'
 
         p1 <- df_vel %>% ggplot(aes(x= frame, y= vel.ma)) +
@@ -233,7 +234,7 @@ heatmap.veloc.plot <-
                 stat_density_2d(aes(fill = ..ndensity..), geom = "raster", contour = FALSE) +
                 scale_fill_gradientn(colors = specCols) +
                 facet_grid(label.chromo ~ .) +
-                ylab("Velocity") +
+                ylab(colname) +
                 theme_bw()
 
         return(p1)
@@ -241,7 +242,8 @@ heatmap.veloc.plot <-
 
 heatmap.veloc.segmented.plot <-
     function(df_vel_segmented,
-             freq = FALSE) {
+             freq = FALSE,
+             colname="Velocity") {
 
         if(is.null(df_vel_segmented)) {
             return(NULL)
@@ -249,7 +251,7 @@ heatmap.veloc.segmented.plot <-
 
         p1 <-
             df_vel_segmented %>% ggplot(aes(x=frame, y=vel.ma )) +
-            ylab("Velocity") +
+            ylab(colname) +
             stat_density_2d(aes(fill = ..ndensity..), geom = "raster", contour = FALSE) +
             facet_grid(cluster ~ group * .) +
             scale_fill_gradientn(colors = specCols) +
@@ -262,7 +264,7 @@ heatmap.veloc.segmented.plot <-
     }
 
 plot.velocities <-
-    function(df_vt.smooth, individual = FALSE) {
+    function(df_vt.smooth, individual = FALSE, colname="Velocity") {
         p1 <-
             ggplot(df_vt.smooth, aes(
                 y = vel.ma,
@@ -274,7 +276,7 @@ plot.velocities <-
                          trim = TRUE,
                          outlier.shape = NA) +
             theme_bw() +
-            ylab("Velocity")
+            ylab(colname)
 
         if (individual) {
             p1 <- p1 + facet_wrap(particle ~ .)
@@ -286,7 +288,7 @@ plot.velocities <-
     }
 
 plot.velocities.segment <-
-    function(df_seg_vels) {
+    function(df_seg_vels, colname="Velocity") {
 
         nclust <- df_seg_vels %>% ungroup() %>% select(cluster) %>% distinct()
 
@@ -301,7 +303,7 @@ plot.velocities.segment <-
                          outlier.shape = NA) +
             facet_wrap(cluster ~ ., ncol = 2) +
             theme_bw() +
-            ylab("Velocity") +
+            ylab(colname) +
             theme(panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(1, "lines"))
 
         plt <- ggplotly(p2, height = 100 * nrow(nclust), width = 600)

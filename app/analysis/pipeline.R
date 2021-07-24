@@ -316,11 +316,35 @@ velocity.per.segment <-
 
         df.vels <- df.segm %>% group_by(group, particle) %>% dplyr::filter(dplyr::n() >= 10) %>%
             group_by(group, particle, cluster) %>% dplyr::filter(dplyr::n() >= vel_ma * 2) %>%
-            mutate(vel.ma = calculate.velocity.ma(!!sym(coords[1]), !!sym(coords[2]), vel_ma)) %>%
+            mutate(vel.ma = calculate.velocity.ma(., coords, vel_ma)) %>%
             na.omit() %>% mutate(label = group)
 
         if (is.function(updateProgress)) {
             updateProgress("Velocities computed")
+        }
+
+        vels.segs.grouped <- df.vels %>% ungroup()
+        return(vels.segs.grouped)
+    }
+
+density.per.segment <-
+    function(df.segm,
+             coords,
+             vel_ma,
+             updateProgress = NULL) {
+
+        if (is.function(updateProgress)) {
+            updateProgress("Preparing data")
+        }
+
+
+        df.vels <- df.segm %>% group_by(group, particle) %>% dplyr::filter(dplyr::n() >= 10) %>%
+            group_by(group, particle, cluster) %>% dplyr::filter(dplyr::n() >= vel_ma * 2) %>%
+            mutate(vel.ma = calculate.ma(!!sym(coords[1]), vel_ma)) %>%
+            na.omit() %>% mutate(label = group)
+
+        if (is.function(updateProgress)) {
+            updateProgress("Densities computed")
         }
 
         vels.segs.grouped <- df.vels %>% ungroup()

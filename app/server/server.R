@@ -101,20 +101,22 @@ server <- function(input, output, session) {
     # Add velocities if selected
     coords <- input$coord_vars
     if (length(coords) != 2) {
-      showNotification("Only can work with 2D analysis.", type = "warning")
+      showNotification("Only tested with 2D analysis.", type = "warning")
     }
-    if (input$calc_veloc && length(coords) == 2) {
+    if (input$calc_veloc) {
       norm_temp <- norm_temp %>% group_by(!!sym(input$particle_vars), !!sym(input$grouping_vars)) %>%
-                    mutate(ang.speed =
-                            angular_speed(data.frame(!!sym(coords[1]), !!sym(coords[2])),
-                                          coord.names = coords),
-                           cal.speed =
-                            calculate.velocity(!!sym(coords[1]), !!sym(coords[2])),)
+                  do(mutate(., cal.speed =
+                          calculate.velocity(.,
+                                        coords = coords),
+                         ang.speed =
+                          calc.angular.speed(.,
+                                        coords = coords)))
     }
-    if (input$calc_more && length(coords) == 2) {
+    if (input$calc_more) {
       norm_temp <- norm_temp %>% group_by(!!sym(input$particle_vars), !!sym(input$grouping_vars)) %>%
-                    mutate(cum.dist =
-                            calculate.cumdist(!!sym(coords[1]), !!sym(coords[2])))
+                  mutate(cum.dist =
+                          calculate.cumdist(.,
+                                        coords = coords))
     }
     norm_temp <- norm_temp %>%
                         na.omit() %>% ungroup()
@@ -213,6 +215,7 @@ server <- function(input, output, session) {
       "cols_individual_plot",
       "df_vars_motifs",
       "segment_variables",
+      "density_variables",
       "df_query_causality"
     )
 
@@ -511,7 +514,8 @@ server <- function(input, output, session) {
       need(velocities_group(), "")
     )
     p <- heatmap.veloc.plot(
-      velocities_group()
+      velocities_group(),
+      input$density_variables
     )
     return(p) # in Plotly format
   })
@@ -522,7 +526,8 @@ server <- function(input, output, session) {
       )
     )
     p <- heatmap.veloc.segmented.plot(
-      velocities_segment()
+      velocities_segment(),
+      input$density_variables
     )
     return(p) # in Plotly format
   })
@@ -702,6 +707,11 @@ server <- function(input, output, session) {
     progress.2 <- Progress$new(session)
     progress.2$set(message = "Computing Spectrograms", value = 0)
 
+    if(is.empty(segmentation_clusters())) {
+      showNotification("You have to run a segmentation, first!", type = "error")
+    }
+    req(segmentation_clusters())
+
     future(seed=TRUE, {
 
       updateProgress <- function(detail = NULL) {
@@ -782,7 +792,9 @@ server <- function(input, output, session) {
     plt_ml <-
       plt_ml %>% filter(!!sym(input$particle_vars) == input$part_individual_plot)
     plt <-
-      morlet.plot(plt_ml, input$cols_individual_plot[1], sig = input$ind_spec_level)
+      morlet.plot(plt_ml, input$cols_individual_plot[1],
+                  sig = input$ind_spec_level,
+                  ylab = input$cols_individual_plot)
     return(plt)
   })
 
@@ -790,18 +802,22 @@ server <- function(input, output, session) {
   velocities_segment <- reactiveVal()
   segmentation_clusters <- reactiveVal()
 
-  observeEvent(input$run_velocities, {
+  observeEvent(input$run_densities, {
+    if (input$density_variables == "none") {
+      return(NULL)
+    }
+
     df <- df_process()
     df.clu <- segmentation_clusters()
 
     # Temporally retrieving reactive values for future
     particle_vars <- input$particle_vars
-    coord_vars <- input$coord_vars
+    density_variables <- input$density_variables
     vel_ma <- input$vel_ma
 
     future(seed=TRUE, {
-      df_vt.smooth <- calc.velocities(df,
-                                    coord_vars,
+      df_vt.smooth <- calc.densities(df,
+                                    density_variables,
                                     vel_ma)
       df_vt.smooth
 
@@ -810,14 +826,19 @@ server <- function(input, output, session) {
     progress <- Progress$new(session)
     progress$set(message = "Computing Velocities", value = 0)
 
+    if(is.empty(segmentation_clusters())) {
+      showNotification("You have to run a segmentation, first!", type = "error")
+    }
+    req(segmentation_clusters())
+
     future(seed=TRUE, {
 
       updateProgress <- function(detail = NULL) {
         progress$inc(amount = 1/2, detail = detail)
       }
 
-      df_seg_vels <- velocity.per.segment(df.clu,
-                      coord_vars,
+      df_seg_vels <- density.per.segment(df.clu,
+                      density_variables,
                       vel_ma,
                       updateProgress = updateProgress)
       progress$close()
@@ -842,6 +863,11 @@ server <- function(input, output, session) {
                           coord_vars,
                           displ_k))
 
+    if(is.empty(segmentation_clusters())) {
+      showNotification("You have to run a segmentation, first!", type = "error")
+    }
+    req(segmentation_clusters())
+
     msd_segment(calc.msd.segment(segments.all,
                                   coord_vars,
                                   displ_k))
@@ -853,7 +879,8 @@ server <- function(input, output, session) {
     )
     p <- plot.velocities(
       velocities_group(),
-      input$velocities_individual
+      input$densities_individual,
+      input$density_variables
     )
     return(p)
   })
@@ -864,7 +891,8 @@ server <- function(input, output, session) {
       )
     )
     p <- plot.velocities.segment(
-      velocities_segment()
+      velocities_segment(),
+      input$density_variables
     )
     return(p)
   })

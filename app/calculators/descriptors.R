@@ -34,21 +34,44 @@ calculate.freqs.max <- function(spx, spy) {
     return(spx[spy == max(spy, na.rm = TRUE)][1])
 }
 
-calculate.velocity <- function(y, x) {
-    vt <- sqrt(diff(y) ^ 2 + diff(x) ^ 2)
-    if (length(y) > length(vt)) {
-        vt <- vt[1:length(y)]
+calculate.velocity <- function(df, coords) {
+    df_vel <- df %>% select(coords)
+    vt <- sqrt(rowSums(as.data.frame(lapply(df_vel, diff, lag=1))^2))
+    if (NROW(df_vel) > length(vt)) {
+        vt <- vt[1:NROW(df_vel)]
     }
     return(vt)
 }
 
-calculate.velocity.ma <- function(y, x, ma.order) {
-    vt <- sqrt(diff(y) ^ 2 + diff(x) ^ 2)
+calculate.velocity.ma <- function(df, coords, ma.order) {
+    vt <- calculate.velocity(df, coords)
     vt.smooth <- forecast::ma(vt, order = ma.order)
-    if (length(y) > length(vt.smooth)) {
-        vt.smooth <- vt.smooth[1:length(y)]
+    if (length(vt) > length(vt.smooth)) {
+        vt.smooth <- vt.smooth[1:length(vt)]
     }
     return(vt.smooth)
+}
+
+calc.angular.speed <- function (df, coords) {
+  print(coords[1])
+  xx <- diff(df[[coords[1]]])
+  if (length(coords) == 1) {
+      yy <- diff(df[[coords[1]]])
+  } else {
+      yy <- diff(df[[coords[2]]])
+  }
+  b <- sign(xx)
+  b[b == 0] <- 1
+  bearings <- b * (yy < 0) * pi + atan(xx/yy)
+  c(NA, diff(bearings), NA)
+}
+
+calculate.ma <- function(x, ma.order) {
+    x.smooth <- forecast::ma(x, order = ma.order)
+    if (length(x) > length(x.smooth)) {
+        x.smooth <- x.smooth[1:length(x)]
+    }
+    return(x.smooth)
 }
 
 # TODO: include the reference
@@ -66,8 +89,9 @@ calculate.msd <- function(sx,sy,until=4)
 }
 
 # TODO: include the reference to amt
-calculate.cumdist <- function(x, y) {
-  c(0, cumsum(sp::spDists(as.matrix(cbind(x, y)), segments = TRUE)))
+calculate.cumdist <- function(df, coords) {
+  df_cd <- df %>% select(coords)
+  return(c(0, cumsum(sp::spDists(as.matrix(df_cd), segments = TRUE))))
 }
 
 spectrum.slope <- function(y) {

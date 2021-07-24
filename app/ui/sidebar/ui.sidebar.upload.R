@@ -125,8 +125,8 @@ chromo.ui.sidebar.upload <- function(request) {
                        "Time normalization",
                        choices = list(
                          "None" = "none",
-                         "Last is common" = "last",
-                         "Last is common and zero" = "last_norm"
+                         "Last is common and zero" = "last",
+                         "Last is common" = "last_norm"
                        ),
                        selected = "none"
                      ),

@@ -1,6 +1,13 @@
 calc.velocities <- function(df, coords, vel_ma) {
     df_vt.smooth <- df %>% group_by(group, particle) %>%
-        mutate(vel.ma = calculate.velocity.ma(!!sym(coords[1]),!!sym(coords[2]), vel_ma)) %>%
+        mutate(vel.ma = calculate.velocity.ma(., coords, vel_ma)) %>%
+        na.omit()
+    return(as.data.frame(df_vt.smooth))
+}
+
+calc.densities <- function(df, coords, vel_ma) {
+    df_vt.smooth <- df %>% group_by(group, particle) %>%
+        mutate(vel.ma = calculate.ma(!!sym(coords[1]), vel_ma)) %>%
         na.omit()
     return(as.data.frame(df_vt.smooth))
 }
