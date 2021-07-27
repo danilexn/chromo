@@ -10,9 +10,13 @@ chromo.ui.panel.segment <- tabPanel(
                         h4("Clustered Segments significance"),
                         withSpinner(verbatimTextOutput('table_segments_significant'))
                       ),
-                      tabPanel("Segment summary", icon = icon("book"),
+                      tabPanel("Cluster summary", icon = icon("book"),
                         h4("Summary table"),
-                        withSpinner(dataTableOutput('table_segments'))
+                        h5("Displaying z-scaled means"),
+                        withSpinner(dataTableOutput('table_segments')),
+                        h4("Summary table per group"),
+                        h5("Displaying z-scaled means"),
+                        withSpinner(dataTableOutput('table_segments_grouped'))
                       ),
                       tabPanel("Spectrum", icon = icon("wave-square"),
                         br(),
@@ -31,7 +35,7 @@ chromo.ui.panel.segment <- tabPanel(
                             downloadButton("downSpecH", "Download figure"),
                             withSpinner(plotOutput("plot_heatmap", height = "auto", width = 600)),
                             hr(),
-                            h4("Spectral heatmaps per segment"),
+                            h4("Spectral heatmaps per cluster"),
                             downloadButton("downSpecSegH", "Download figure"),
                             withSpinner(plotOutput("plot_heatmap_segment", height = "auto", width = 600))
                           ),
@@ -41,15 +45,15 @@ chromo.ui.panel.segment <- tabPanel(
                           )
                         )
                       ),
-                      tabPanel("Densities", icon = icon("tachometer-alt"),
+                      tabPanel("Distributions", icon = icon("tachometer-alt"),
                         br(),
                         tabsetPanel(id = "densitytab",
                           tabPanel("Grouped plots",  icon = icon("layer-group"),
-                            h4("Global densities"),
+                            h4("Global distribution"),
                             downloadButton("downVel", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities", height = "auto")),
                             hr(),
-                            h4("Density per segment"),
+                            h4("Density per cluster"),
                             downloadButton("downVelSeg", "Download figure"),
                             withSpinner(plotlyOutput("plot_velocities_segment", height = "auto"))
                           ),
@@ -58,7 +62,7 @@ chromo.ui.panel.segment <- tabPanel(
                             downloadButton("downVelH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat", height = "auto", width = 600)),
                             hr(),
-                            h4("Heatmaps per segment"),
+                            h4("Heatmaps per cluster"),
                             downloadButton("downVelSegH", "Download figure"),
                             withSpinner(plotOutput("plot_velocities_heat_segment", height = "auto", width = 600))
                           ),

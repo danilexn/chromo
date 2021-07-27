@@ -88,8 +88,8 @@ chromo.ui.sidebar.segment <- function(request) {
                      actionButton('run_spectrum', 'Calculate spectrum'),
                    ),
                    conditionalPanel(
-                     condition = "input.tabsegment == 'Densities'",
-                     h4("Densities"),
+                     condition = "input.tabsegment == 'Distributions'",
+                     h4("Distributions"),
                      selectizeInput(
                       "density_variables",
                       "Input column",

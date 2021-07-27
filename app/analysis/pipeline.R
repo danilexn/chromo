@@ -66,37 +66,23 @@ segment.timeseries <-
             updateProgress("Spectrums calculated")
         }
 
-        if (length(coords) == 1) {
-            df.summ <- df.segm %>%
+        df.spec.ms.m <- df.segm %>%
             group_by(group, particle, segmentchromo) %>%
-            arrange(group, particle, segmentchromo) %>%
-            summarise(
-                mean.c1 = mean(!!sym(coords[1]), na.rm = TRUE),
-                sd.c1 = sd(!!sym(coords[1]), na.rm = TRUE),
+            bow(tie(spec.m, spec.ms) := spectrum.slope(y)) %>%
+            ungroup() %>% arrange(group, particle, segmentchromo) %>% select(spec.m, spec.ms)
+        df.summ <- df.segm %>%
+            group_by(group, particle, segmentchromo) %>%
+            summarise(across(coords,
+                    list(mean=~mean(.x, na.rm=TRUE),
+                         sd=~sd(.x, na.rm=TRUE),
+                         median=~median(.x, na.rm=TRUE))
+                ),
                 frame.b = first(frame.seg),
                 frame.e = last(frame.seg),
                 begin = first(frame.seg) + first(frame.init) - 1,
                 end = last(frame.seg) + first(frame.init) - 1
             ) %>% arrange(group, particle, segmentchromo)
-        } else {
-            df.spec.ms.m <- df.segm %>%
-                group_by(group, particle, segmentchromo) %>%
-                bow(tie(spec.m, spec.ms) := spectrum.slope(y)) %>%
-                ungroup() %>% arrange(group, particle, segmentchromo) %>% select(spec.m, spec.ms)
-            df.summ <- df.segm %>%
-                group_by(group, particle, segmentchromo) %>%
-                summarise(
-                    mean.c1 = mean(!!sym(coords[1]), na.rm = TRUE),
-                    mean.c2 = mean(!!sym(coords[2]), na.rm = TRUE),
-                    sd.c1 = sd(!!sym(coords[1]), na.rm = TRUE),
-                    sd.c2 = sd(!!sym(coords[2]), na.rm = TRUE),
-                    frame.b = first(frame.seg),
-                    frame.e = last(frame.seg),
-                    begin = first(frame.seg) + first(frame.init) - 1,
-                    end = last(frame.seg) + first(frame.init) - 1
-                ) %>% arrange(group, particle, segmentchromo)
-            df.summ <- cbind(df.summ, df.spec, df.spec.ms.m)
-        }
+        df.summ <- cbind(df.summ, df.spec, df.spec.ms.m)
 
         if (is.function(updateProgress)) {
             updateProgress("Summary computed")
@@ -170,7 +156,11 @@ segment.timeseries.multiv <-
 
                     seg.temp <- seq.temp[beg:end, ]
                     seg.temp.mean <-
-                        seq.temp.filtered[beg:end, ] %>% summarise_all(mean)
+                        seq.temp.filtered[beg:end, ] %>% summarise_all(list(
+                            mean=~mean(.x, na.rm = TRUE),
+                            sd=~sd(.x, na.rm = TRUE),
+                            median=~median(.x, na.rm = TRUE)
+                        ))
 
                     spec.s = calculate.spectrum(seg.temp[[coords[1]]], seg.temp[["frame"]])
                     spec.f = calculate.freqs(seg.temp[[coords[1]]], seg.temp[["frame"]], sampling.time)
@@ -211,6 +201,8 @@ clusterize.segments <-
                 c("segmentchromo",
                   "begin",
                   "end",
+                  "frame.e",
+                  "frame.b",
                   "group",
                   "particle",
                   "state")
@@ -254,6 +246,12 @@ segmentation.summary <- function(segments) {
     drop.cols <- c("subsample_ind", "subsample_ind.y", "state", "group", "particle", "segmentchromo")
     segments <- segments %>% select(-one_of(drop.cols))
     return(segments %>% group_by(cluster) %>% summarise_all(mean))
+}
+
+segmentation.grouped.summary <- function(segments) {
+    drop.cols <- c("subsample_ind", "subsample_ind.y", "state", "particle", "segmentchromo")
+    segments <- segments %>% select(-one_of(drop.cols))
+    return(segments %>% group_by(group, cluster) %>% summarise_all(mean))
 }
 
 spectrogram.global <-

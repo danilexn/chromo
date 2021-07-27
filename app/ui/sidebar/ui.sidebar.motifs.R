@@ -59,7 +59,7 @@ chromo.ui.sidebar.motifs <- function(request) {
                      value = 3
                    ),
                    conditionalPanel(
-                    condition = "input.tabmotifs=='Per segment'",
+                    condition = "input.tabmotifs=='Per cluster'",
                     actionButton('run_motifs', 'Run Motif Discovery')
                    ),
                    hr(),

@@ -93,7 +93,7 @@ tr.segmentation.data.frame <- function (x, Kmax, lmin, type = "home-range", seg.
   }
   segmented <- tr.segmentation_internal(x, seg.var = seg.var,
     diag.var = diag.var, order.var = order.var, Kmax = Kmax,
-    lmin = lmin, dat = dat, type = type, ...)
+    lmin = lmin, dat = dat, type = type, scale.variable=TRUE, ...)
   return(segmented)
 }
 

@@ -552,6 +552,11 @@ server <- function(input, output, session) {
     t <- segmentation.summary(segmentation_calc())
     return(t)
   })
+
+  segment_clustering_grouped <- reactive({
+    t <- segmentation.grouped.summary(segmentation_calc())
+    return(t)
+  })
   
   motifs_discovery <- reactiveVal()
   observe({
@@ -1011,6 +1016,10 @@ server <- function(input, output, session) {
     segment_clustering()
   })
   
+  output$table_segments_grouped <- renderDataTable({
+    segment_clustering_grouped()
+  })
+
   output$table_segments_significant <- renderPrint({
     segment_significant()
   })

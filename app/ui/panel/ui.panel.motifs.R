@@ -39,9 +39,9 @@ chromo.ui.panel.motifs <- tabPanel(
                             hr()
                           )
                         ),
-                        tabPanel("Per segment", icon = icon("dice-one"),
-                          h4("Discovered per-segment motifs"),
-                          h5("Only suitable-sized segments will be processed"),
+                        tabPanel("Per cluster", icon = icon("dice-one"),
+                          h4("Discovered per-cluster motifs"),
+                          h5("Only suitable-sized clusters will be processed"),
                             withSpinner(uiOutput("tabs_motifs"))
                         )
                       )
