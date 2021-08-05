@@ -45,6 +45,7 @@ RUN sudo apt-get update -y; sudo apt-get install -y libglpk-dev
 RUN R -e "install.packages('igraph'); install.packages('pcalg')"
 RUN R -e "install.packages('networkD3')"
 RUN R -e "install.packages('PerformanceAnalytics')"
+RUN R -e "install.packages('Rcpp')"
 
 RUN addgroup --system app \
     && adduser --system --ingroup app app
