@@ -82,6 +82,10 @@ server <- function(input, output, session) {
         norm_temp <-
           df_selected() %>% group_by(!!sym(input$particle_vars)) %>%
           mutate_at(cols_normalize, normalize.min)
+      } else if (input$norm_type == "median") {
+        norm_temp <-
+          df_selected() %>% group_by(!!sym(input$particle_vars)) %>%
+          mutate_at(cols_normalize, normalize.median)
       } else if (input$norm_type == "zero_one") {
         norm_temp <-
           df_selected() %>% group_by(!!sym(input$particle_vars)) %>%
@@ -114,9 +118,9 @@ server <- function(input, output, session) {
     }
     if (input$calc_more) {
       norm_temp <- norm_temp %>% group_by(!!sym(input$particle_vars), !!sym(input$grouping_vars)) %>%
-                  mutate(cum.dist =
+                  do(mutate(., cum.dist =
                           calculate.cumdist(.,
-                                        coords = coords))
+                                        coords = coords)))
     }
     norm_temp <- norm_temp %>%
                         na.omit() %>% ungroup()
@@ -403,7 +407,9 @@ server <- function(input, output, session) {
                                     input$grouping_vars,
                                     input$particle_vars,
                                     segments = input$seg_range)
-    segmentation_clusters(create.df.clusters(segments, segmentation_raw()[[2]]))
+    # segments <- reapply.clustering(segments)
+    clust <- create.df.clusters(segments, segmentation_raw()[[2]])
+    segmentation_clusters(clust)
     segmentation_calc(segments)
   })
 
@@ -658,6 +664,7 @@ server <- function(input, output, session) {
     df_query_causality <- input$df_query_causality
     pval_corr_range <- input$pval_corr_range
     lags_corr_range <- input$lags_corr_range
+    signif_causal_adj <- input$signif_causal_adj
     df_sequence_causality <- input$df_sequence_causality
 
     cor_group(calc.cor(df,
@@ -668,6 +675,7 @@ server <- function(input, output, session) {
                           df_query_causality,
                           pval_corr_range,
                           lags_corr_range,
+                          signif_causal_adj,
                           df_sequence_causality,
                           progress = progress)
 

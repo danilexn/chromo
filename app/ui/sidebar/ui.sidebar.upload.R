@@ -86,6 +86,7 @@ chromo.ui.sidebar.upload <- function(request) {
                          "None" = "none",
                          "Maximum-scaling" = "max",
                          "Minimum-scaling" = "min",
+                         "Subtract median" = "median",
                          "0-1 scaling" = "zero_one",
                          "Z-score" = "z-score"
                        ),

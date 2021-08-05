@@ -10,6 +10,10 @@ normalize.min <- function(x, na.rm = FALSE) {
     return((x) / (min(x)))
 }
 
+normalize.median <- function(x, na.rm = FALSE) {
+    return(x - median(x))
+}
+
 normalize.max <- function(x, na.rm = FALSE) {
     return((x) / (max(x)))
 }

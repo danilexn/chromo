@@ -403,3 +403,59 @@ clustering.variables <- function(df, variables) {
     classes <- Mclust(df %>% select(variables))
     return(classes)
 }
+
+reapply.clustering <- function(df, p.corr = NULL) {
+    print(df)
+    df.output <- df
+    drop.cols <-
+                c("segmentchromo",
+                  "frame.init",
+                  "frame.seg",
+                  "begin",
+                  "end",
+                  "frame.e",
+                  "frame.b",
+                  "particle")
+
+    class.diff.cluster <-
+                df %>% select(-one_of(drop.cols))
+
+    cluster.no <- df %>% select(cluster) %>% distinct()
+    group.no <- df %>% select(group) %>% distinct()
+    cluster.changes <- df %>% select(group, cluster) %>% distinct()
+    cluster.changes <- cbind(cluster.changes, data.frame(change = cluster.changes$cluster))
+    for (i in group.no[, 1]) for (j in group.no[, 1]) {
+        if (i == j) next
+        for (c in cluster.no) {
+            current.cluster <- class.diff.cluster %>% filter(cluster == c)
+            current.groups <- current.cluster %>% filter(group %in% c(i, j))
+            print(current.groups)
+            mod.1 <-
+                glm(group ~ . - cluster,
+                    data = current.groups,
+                    family = "binomial")
+            mod.2 <-
+                glm(group ~ 1,
+                    data = current.groups,
+                    family = "binomial")
+
+            test <- anova(mod.1, mod.2)
+            print(test)
+
+            # p.val <- summary(test)[[1]][["Pr(>F)"]]
+
+            # if (p.val < 0.05) {
+            #     print("Significant segment differences found!")
+            #     max.clust <- max(cluster.changes$change)
+            #     df.output <- df.output %>% mutate(cluster = ifelse(group == j, cluster + max.clust, cluster))
+            #     cluster.changes <- rbind(cluster.changes, data.frame(group = j, cluster = c, change = c + n.clusters))
+            # } else {
+            #     print("No significant differences found!")
+            #     go.back <- cluster.changes %>% filter(group == i && cluster == c) %>% select(change)
+            #     df.output <- df.output %>% mutate(cluster = ifelse(group == j, go.back, cluster))
+            # }
+        }
+    }
+
+    return(df.output)
+}

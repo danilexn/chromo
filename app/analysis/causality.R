@@ -23,11 +23,11 @@ find.vlte.causality <- function(X, nlags, pval, updateProgress = NULL) {
   out$adjMat
 }
 
-causality.global <- function(df, vars, pval, nlags, sel.group, progress = NULL){
+causality.global <- function(df, vars, pval, nlags, p.adj.method, sel.group, progress = NULL){
     # Mutate variables of signal and morphology
-
     df_filter <- df[,c("particle", "group", vars)] %>% filter(group == sel.group) %>% select(-group)
     nparts <- nrow(df_filter %>% dplyr::select(particle) %>% distinct())
+    pval <- p.adjust.inv(pval, p.adj.method, nparts)
     updateProgress <- function(detail = NULL) {
       progress$inc(amount = 1/(nparts*3), detail = detail)
     }

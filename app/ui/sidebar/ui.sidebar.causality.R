@@ -41,6 +41,18 @@ chromo.ui.sidebar.causality <- function(request) {
                       max = 1,
                       value = c(0.8)
                     ),
+                    selectizeInput(
+                      "signif_causal_adj",
+                      "P-value adjustment",
+                      choices = list(
+                        "None" = "none",
+                        "Bonferroni" = "fdr",
+                        "Benjamini-Hochberg" = "holm"
+                      ),
+                      selected = "none",
+                      multiple = FALSE,
+                      options = NULL
+                    ),
                     hr(),
                     actionButton('run_causal', 'Run causality analysis')
                  )
