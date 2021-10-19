@@ -11,6 +11,15 @@ is.empty.or.except <- function(x) {
     return(TRUE)
 }
 
+getExtension <- function(file){ 
+    ex <- strsplit(basename(file), split="\\.")[[1]]
+    return(ex[-1])
+} 
+
+read.tsv <- function(filename){
+    return(read.csv(filename, sep = "\t"))
+}
+
 sourceFolder <- function(folder, recursive = FALSE, ...)
 {
     files <- list.files(folder, pattern = "[.][rR]$",

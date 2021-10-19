@@ -21,21 +21,30 @@ server <- function(input, output, session) {
         data <- NULL
       } else {
         isolate({
-          # TODO: implement various csv files, each is a group
-          if (input$upload$type == "text/csv") {
+          print(input$upload$type)
+          print(input$upload$datapath)
+          tryCatch({
+          if ((tolower(input$upload$type) == "text/csv") || 
+              (tolower(getExtension(input$upload$datapath)) == "csv")) {
             # df_input <- read.csv(input$upload$datapath)
             df_input_list <- lapply(input$upload$datapath, read.csv)
-          } else if (grepl("xls", input$upload$type) ||
-                     grepl("Excel", input$upload$type)) {
+          } else if ((tolower(input$upload$type) == "text/tsv") || 
+                (tolower(getExtension(input$upload$datapath)) == "tsv")) {
+            # df_input <- read.csv(input$upload$datapath)
+            df_input_list <- lapply(input$upload$datapath, read.tsv)
+          } else if (grepl("xls", tolower(input$upload$type)) ||
+                     grepl("excel", tolower(input$upload$type))) {
             # df_input <- read_excel(input$upload$datapath)
             df_input_list <- lapply(input$upload$datapath, read_excel)
           }
-
-          names(df_input_list) <- gsub(input$upload$name, pattern="\\..*", replacement="")
-
-          df_input <- bind_rows(df_input_list, .id = "group.file.chromo")
-
-          data <- df_input
+            names(df_input_list) <- gsub(input$upload$name, pattern="\\..*", replacement="")
+            
+            df_input <- bind_rows(df_input_list, .id = "group.file.chromo")
+            
+            data <- df_input
+          }, error=function(cond){
+            showNotification(paste("Could not open file because: ", cond), type = "error")
+          })
         })
       }
     } else if (input$data_input == 2) {
