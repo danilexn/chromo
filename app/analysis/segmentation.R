@@ -13,7 +13,7 @@ tr.segmentation_internal <- function (x, seg.var = NULL, diag.var = NULL, order.
   missing_subsample_over <- missing(subsample_over)
   if (subsample) {
     x_nrow <- nrow(x)
-    tmp <- subsample(x, subsample_over, subsample_by)
+    tmp <- segclust2d::subsample(x, subsample_over, subsample_by)
     x <- tmp$x
     subsample_by <- tmp$by
     dat <- dat[, !is.na(x$subsample_ind)]
