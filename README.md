@@ -30,3 +30,7 @@ Now, open a browser at http://127.0.0.1:8080, and the application should be read
 Now, open a browser at http://127.0.0.1:80, and the application should be ready.
 You can modify the nginx.conf file in the directory net to enable HTTPS.
 Remember to mount the folder with certificates in docker-compose.yml, under the webserver section.
+
+
+## Acknowledgements
+Special thanks to Jesús (https://github.com/jpincru) for the constructive feedback and suggestions!
