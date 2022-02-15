@@ -66,3 +66,41 @@ spectrum.significance <-
                 family = "binomial")
         anova(m1.r, m2.r, m3.r, test = "Chisq")
     }
+
+spectrum.significance.segment <-
+  function(df_freqs,
+           range) {
+    df_freqs <- df_freqs %>% mutate(spec.f = spec.f / max(spec.f)) %>%
+      filter(spec.f < range[2], spec.f > range[1])
+    
+    p_values_test_a <- c()
+    p_values_test_b <- c()
+    
+    for (i in unique(df_freqs$cluster)) {
+      m1.r <-
+        glm(factor(group) ~ spec.f * spec.s ,
+            data = df_freqs %>% filter(cluster==i),
+            family = "binomial")
+      m2.r <-
+        glm(factor(group) ~ spec.f + spec.s ,
+            data = df_freqs %>% filter(cluster==i),
+            family = "binomial")
+      m3.r <-
+        glm(factor(group) ~ 1 ,
+            data = df_freqs %>% filter(cluster==i),
+            family = "binomial")
+      print(paste("Segment", i))
+      aov_result <- anova(m1.r, m2.r, m3.r, test = "Chisq")
+      print(aov_result)
+      p_values_test_a <- c(p_values_test_a, aov_result[["Pr(>Chi)"]][2])
+      p_values_test_b <- c(p_values_test_b, aov_result[["Pr(>Chi)"]][3])
+    }
+    
+    print("Adjusted p-values (interaction)")
+    print(p.adjust(p_values_test_a, method = "holm"))
+    
+    print("Adjusted p-values (additive)")
+    p.adjust(p_values_test_b, method = "holm")
+    
+    
+  }
