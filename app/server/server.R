@@ -538,7 +538,7 @@ server <- function(input, output, session) {
 
   plot_velocities_heat_segment <- reactive({
     validate(
-      need(velocities_segment(), "\nPlease, run 'Calculate Velocities' to continue."
+      need(velocities_segment(), "\nPlease, run 'Calculate Densities' to continue."
       )
     )
     p <- heatmap.veloc.segmented.plot(
@@ -922,7 +922,7 @@ server <- function(input, output, session) {
 
   plot_velocities_segment <- reactive({
     validate(
-      need(velocities_segment(), "\nPlease, run 'Calculate Velocities' to continue."
+      need(velocities_segment(), "\nPlease, run 'Calculate Densities' to continue."
       )
     )
     p <- plot.velocities.segment(
@@ -993,10 +993,18 @@ server <- function(input, output, session) {
   
   velocities_significance <- reactive({
     validate(
-      need(velocities_group(), "Please, run 'Calculate Velocities' to continue."
+      need(velocities_group(), "Please, run 'Calculate Densities' to continue."
       )
     )
     significant.velocities(velocities_group())
+  })
+  
+  velocities_significance_segment <- reactive({
+    validate(
+      need(velocities_group(), "Please, run 'Calculate Densities' to continue."
+      )
+    )
+    significant.velocities.segment(velocities_segment())
   })
   
   plot_width <- reactive ({
@@ -1123,6 +1131,10 @@ server <- function(input, output, session) {
 
   output$summ_velocities <- renderPrint({
     velocities_significance()
+  })
+  
+  output$summ_velocities_segment <- renderPrint({
+    velocities_significance_segment()
   })
 
   output$tabs_motifs <- renderUI({

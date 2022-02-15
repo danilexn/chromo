@@ -77,7 +77,10 @@ chromo.ui.panel.segment <- tabPanel(
                           ),
                           tabPanel("Summary",  icon = icon("book"),
                             h4("Density difference significance"),
-                            withSpinner(verbatimTextOutput("summ_velocities"))
+                            h5("Global"),
+                            withSpinner(verbatimTextOutput("summ_velocities")),
+                            h5("Per segment"),
+                            withSpinner(verbatimTextOutput("summ_velocities_segment"))
                           )
                         )
                       ),

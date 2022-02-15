@@ -2,6 +2,28 @@ significant.velocities <- function(df_vt.smooth) {
     wilcox.test(df_vt.smooth$vel.ma ~ df_vt.smooth$group, conf.int = TRUE)
 }
 
+significant.velocities.segment <- function(df_vt) {
+    p_values_test <- c()
+    df.vt.global <<- df_vt
+    
+    for (i in unique(df_vt$cluster)) {
+      df.vt.cluster <- df_vt %>% filter(cluster == i)
+      
+      if (length(unique(df.vt.cluster$group)) < 2) {
+        next
+      }
+      wilcox.result <- wilcox.test(df.vt.cluster$vel.ma ~ df.vt.cluster$group,
+                                   conf.int = TRUE)
+
+      print(paste("Segment", i))
+      print(wilcox.result)
+      p_values_test <- c(p_values_test, wilcox.result$p.value)
+    }
+    
+    print("Adjusted p-values (Wilcox test)")
+    p.adjust(p_values_test, method = "holm")
+  }
+
 chisq.multicomp <- function(x,p.method="fdr") {
   x <- sort(x)
   fun.p <- function(i,j) {
