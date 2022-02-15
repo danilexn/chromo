@@ -59,11 +59,17 @@ chromo.ui.panel.segment <- tabPanel(
                         tabsetPanel(id = "densitytab",
                           tabPanel("Grouped plots",  icon = icon("layer-group"),
                             h4("Global distribution"),
-                            downloadButton("downVel", "Download figure"),
+                            fluidRow(
+                              column(4, downloadButton("downVel", "Download figure"),),
+                              column(4, downloadButton("downVelTable", "Download CSV"),),
+                            ),
                             withSpinner(plotlyOutput("plot_velocities", height = "auto")),
                             hr(),
                             h4("Density per cluster"),
-                            downloadButton("downVelSeg", "Download figure"),
+                            fluidRow(
+                              column(4, downloadButton("downVelSeg", "Download figure"),),
+                              column(4, downloadButton("downVelSegTable", "Download CSV"),),
+                            ),
                             withSpinner(plotlyOutput("plot_velocities_segment", height = "auto"))
                           ),
                           tabPanel("Heatmaps",  icon = icon("map"),

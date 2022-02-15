@@ -1313,6 +1313,19 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
+  
+  output$downVelTable <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_", input$density_variables, ".csv", sep = "")
+    },
+    content <- function(file) {
+      density.tab.dw <- velocities_group()[c("particle",
+                                             "group",
+                                             "vel.ma")]
+      names(density.tab.dw)[names(density.tab.dw) == 'vel.ma'] <- input$density_variables
+      write.csv(density.tab.dw, file, row.names = FALSE)
+    }
+  )
 
   output$downVelSeg <- downloadHandler(
     filename <- function() {
@@ -1324,6 +1337,20 @@ server <- function(input, output, session) {
       dev.off()
     },
     contentType = "application/pdf"
+  )
+  
+  output$downVelSegTable <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_", input$density_variables, "_Segments.csv", sep = "")
+    },
+    content <- function(file) {
+      density.tab.dw <- velocities_segment()[c("particle",
+                                             "group",
+                                             "segmentchromo",
+                                             "vel.ma")]
+      names(density.tab.dw)[names(density.tab.dw) == 'vel.ma'] <- input$density_variables
+      write.csv(density.tab.dw, file, row.names = FALSE)
+    }
   )
 
   output$downVelH <- downloadHandler(
