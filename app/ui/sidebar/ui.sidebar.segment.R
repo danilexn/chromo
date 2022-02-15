@@ -75,6 +75,13 @@ chromo.ui.sidebar.segment <- function(request) {
                        max = 1,
                        value = c(0.01, 0.6)
                      ),
+                     sliderInput(
+                       "spec_ticks",
+                       label = "Number of ticks (x-axis)",
+                       min = 0,
+                       max = 20,
+                       value = 5
+                     ),
                      checkboxInput(
                        inputId = "freq_spectrogram",
                        label = "Frequencies?",

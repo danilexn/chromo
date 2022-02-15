@@ -23,11 +23,17 @@ chromo.ui.panel.segment <- tabPanel(
                         tabsetPanel(id = "spectrumtab",
                           tabPanel("Grouped plots", icon = icon("layer-group"),
                             h4("Spectral densities plot"),
-                            downloadButton("downSpec", "Download figure"),
+                            fluidRow(
+                              column(4, downloadButton("downSpec", "Download figure"),),
+                              column(4, downloadButton("downSpecTable", "Download CSV"),),
+                            ),
                             withSpinner(plotlyOutput("plot_spectrum", height = "auto")),
                             hr(),
                             h4("Spectral densities per group"),
-                            downloadButton("downSpecSeg", "Download figure"),
+                            fluidRow(
+                              column(4, downloadButton("downSpecSeg", "Download figure"),),
+                              column(4, downloadButton("downSpecSegTable", "Download CSV"),),
+                            ),
                             withSpinner(plotlyOutput("plot_spectrum_segments", height = "auto"))
                           ),
                           tabPanel("Heatmaps", icon = icon("map"),
@@ -41,7 +47,10 @@ chromo.ui.panel.segment <- tabPanel(
                           ),
                           tabPanel("Summary", icon = icon("book"),
                             h4("Spectral difference significance"),
-                            withSpinner(verbatimTextOutput("summ_spectrum"))
+                            h5("Global"),
+                            withSpinner(verbatimTextOutput("summ_spectrum")),
+                            h5("Per segment"),
+                            withSpinner(verbatimTextOutput("summ_spectrum_segment"))
                           )
                         )
                       ),
