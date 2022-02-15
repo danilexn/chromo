@@ -483,7 +483,8 @@ server <- function(input, output, session) {
       spectrum_global(),
       input$sampl_freq,
       input$freq_spectrogram,
-      input$spectrum_individual
+      input$spectrum_individual,
+      input$spec_ticks
     )
     return(p) # in Plotly format
   })
@@ -808,6 +809,18 @@ server <- function(input, output, session) {
     )
     return(spec_signif)
   })
+  
+  spectrum_significance_segment <- reactive({
+    validate(
+      need(spectrum_global(), "Please, run 'Calculate Spectrum' to continue."
+      )
+    )
+    spec_signif <- spectrum.significance.segment(
+      spectrum_segments(),
+      input$spec_range
+    )
+    return(spec_signif)
+  })
 
   plot_morlet <- reactive({
     plt_ml <- df_normalized()
@@ -1103,6 +1116,10 @@ server <- function(input, output, session) {
   output$summ_spectrum <- renderPrint({
     spectrum_significance()
   })
+  
+  output$summ_spectrum_segment <- renderPrint({
+    spectrum_significance_segment()
+  })
 
   output$summ_velocities <- renderPrint({
     velocities_significance()
@@ -1114,6 +1131,20 @@ server <- function(input, output, session) {
     for (i in 1:length(seg.toplot)) {
       local({
         my_i <- i
+        
+        tab_s_motif <-
+          paste("download_segment_motifs_", my_i, sep = "")
+        
+        output[[tab_s_motif]] <- downloadHandler(
+          filename <- function() {
+            paste("ChroMo_", Sys.time(), "_Segment_", i, "_Motifs.json", sep = "")
+          },
+          content <- function(file) {
+            motifs_tab_download <- seg.toplot[[my_i]]
+            write(rjson::toJSON(motifs_tab_download, indent=1), file)
+          }
+        )
+        
         plt_discord <-
           paste("plot_segment_discord_", my_i, sep = "")
 
@@ -1147,6 +1178,8 @@ server <- function(input, output, session) {
     }
     plot_output_list <- lapply(1:length(seg.toplot), function(i) {
       tabPanel(paste("Segment ", i, sep = ""),
+               hr(),
+               downloadButton(paste("download_segment_motifs_", i, sep = ""), "Download JSON"),
                plotOutput(paste("plot_segment_motifs_", i, sep = "")),
                plotlyOutput(paste("plot_location_motifs_", i, sep = ""), height = "auto"),
                plotOutput(paste("plot_segment_discord_", i, sep = "")),
@@ -1188,6 +1221,20 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
+  
+  output$downSpecTable <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum.csv", sep = "")
+    },
+    content <- function(file) {
+      spectrum_tab_download <- spectrum_global()[c("particle", 
+                                                 "group", 
+                                                 "spec.s",
+                                                 "spec.f")]
+      
+      write.csv(spectrum_tab_download, file, row.names = FALSE)
+    }
+  )
 
   output$downSpecSeg <- downloadHandler(
     filename <- function() {
@@ -1211,6 +1258,24 @@ server <- function(input, output, session) {
       dev.off()
     },
     contentType = "application/pdf"
+  )
+  
+  output$downSpecSegTable <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Spectrum_Segments.csv", sep = "")
+    },
+    content <- function(file) {
+      spectrum_tab_download <- spectrum_segments()[c("particle",
+                                                     "group",
+                                                     "segmentchromo",
+                                                     "frame.init",
+                                                     "frame.seg",
+                                                     "cluster",
+                                                     "spec.s",
+                                                     "spec.f")]
+      
+      write.csv(spectrum_tab_download, file, row.names = FALSE)
+    }
   )
 
   output$downSpecSegH <- downloadHandler(
@@ -1331,6 +1396,16 @@ server <- function(input, output, session) {
       dev.off()
     },
     contentType = "application/pdf"
+  )
+  
+  output$downMotifTab <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Motifs.json", sep = "")
+    },
+    content <- function(file) {
+      motifs_tab_download <- motifs_discovery()
+      write(rjson::toJSON(motifs_tab_download, indent=1), file)
+    }
   )
 
   output$downDiscord <- downloadHandler(
