@@ -72,7 +72,8 @@ spectral.plot <-
     function(df_freqs,
              sampling.time,
              freq = FALSE,
-             individual = FALSE) {
+             individual = FALSE, 
+             x_ticks = 10) {
 
         if (freq) {
             p1 <-
@@ -94,8 +95,13 @@ spectral.plot <-
                 alpha = 0.3
             ) +
             theme_bw() +
-            ylab("Normalized spectral density") +
-            scale_x_continuous(trans = "log10")
+            ylab("Normalized spectral density")
+            
+        x_lim <- layer_scales(p1)$x$get_limits()
+        p1 <- p1 + scale_x_continuous(trans = "log10", 
+                                      breaks = 10^seq(log10(x_lim[1]), 
+                                                            log10(x_lim[2]), 
+                                                            length.out = x_ticks))
 
         plt <- ggplotly(p1, height = 500, width = 600)
 
