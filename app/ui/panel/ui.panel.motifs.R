@@ -18,10 +18,11 @@ chromo.ui.panel.motifs <- tabPanel(
                           ),
                           conditionalPanel(
                             condition = "input.motif_show_motifs == true",
+                            h4("Discovered motifs"),
                             fluidPage(
                               fluidRow(
-                                column(4, h4("Discovered motifs")),
-                                column(1, downloadButton("downMotif", "Download figure")),
+                                column(4, downloadButton("downMotif", "Download figure")),
+                                column(4, downloadButton("downMotifTab", "Download JSON")),
                               )
                             ),
                             withSpinner(plotOutput("plot_motifs_b", height = "auto")),
