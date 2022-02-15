@@ -60,7 +60,8 @@ packages <-
     "networkD3",
     "igraph",
     "GGally",
-    "PerformanceAnalytics"
+    "PerformanceAnalytics",
+    "rjson"
   )
 
 # Load all packages
