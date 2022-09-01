@@ -593,7 +593,9 @@ server <- function(input, output, session) {
       df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$time_vars]
     groups <-
       df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$grouping_vars]
-    
+    particles <-
+      df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$particle_vars]
+
     motifs <-
       motif.discovery(
         seqs,
@@ -602,6 +604,7 @@ server <- function(input, output, session) {
         thr = input$motif_correlation,
         time = time,
         group = groups,
+        particles = particles,
         nmotifs = input$motif_amount
       )
     motifs_discovery(motifs)
@@ -1143,10 +1146,10 @@ server <- function(input, output, session) {
     for (i in 1:length(seg.toplot)) {
       local({
         my_i <- i
-        
+
         tab_s_motif <-
           paste("download_segment_motifs_", my_i, sep = "")
-        
+
         output[[tab_s_motif]] <- downloadHandler(
           filename <- function() {
             paste("ChroMo_", Sys.time(), "_Segment_", i, "_Motifs.json", sep = "")
@@ -1156,7 +1159,20 @@ server <- function(input, output, session) {
             write(rjson::toJSON(motifs_tab_download, indent=1), file)
           }
         )
-        
+
+        tab_s_motif <-
+          paste("download_segment_motifs_csv", my_i, sep = "")
+
+        output[[tab_s_motif]] <- downloadHandler(
+          filename <- function() {
+            paste("ChroMo_", Sys.time(), "_Segment_", i, "_Motifs.csv", sep = "")
+          },
+          content <- function(file) {
+            motifs_tab_download <- seg.toplot[[my_i]][[2]]
+            write.csv(motifs_tab_download, file, row.names = FALSE)
+          }
+        )
+
         plt_discord <-
           paste("plot_segment_discord_", my_i, sep = "")
 
@@ -1192,6 +1208,7 @@ server <- function(input, output, session) {
       tabPanel(paste("Segment ", i, sep = ""),
                hr(),
                downloadButton(paste("download_segment_motifs_", i, sep = ""), "Download JSON"),
+               downloadButton(paste("download_segment_motifs_csv", i, sep = ""), "Download CSV"),
                plotOutput(paste("plot_segment_motifs_", i, sep = "")),
                plotlyOutput(paste("plot_location_motifs_", i, sep = ""), height = "auto"),
                plotOutput(paste("plot_segment_discord_", i, sep = "")),
@@ -1436,7 +1453,7 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downMotifTab <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_Motifs.json", sep = "")
@@ -1444,6 +1461,16 @@ server <- function(input, output, session) {
     content <- function(file) {
       motifs_tab_download <- motifs_discovery()
       write(rjson::toJSON(motifs_tab_download, indent=1), file)
+    }
+  )
+
+  output$downCSVMotifTab <- downloadHandler(
+    filename <- function() {
+      paste("ChroMo_", Sys.time(), "_Motifs.csv", sep = "")
+    },
+    content <- function(file) {
+      motifs_tab_download <- motifs_discovery()[[2]]
+      write.csv(motifs_tab_download, file, row.names = FALSE)
     }
   )
 

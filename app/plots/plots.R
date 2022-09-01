@@ -360,7 +360,7 @@ locations.motifs.plot <- function(locations) {
 
     nlocations <- nrow(locations %>% select(motif) %>% distinct())
 
-    p1 <- locations %>% ggplot(aes(x = group, y = location, color = group)) +
+    p1 <- locations %>% ggplot(aes(x = group, y = location, color = group, label = particle)) +
             geom_violin() +
             geom_jitter() +
             facet_wrap(motif ~ .) +

@@ -236,6 +236,7 @@ motifs.per.segment <- function(df.segm, var, nmain, nquery, window, pct, thr, mo
                 thr = thr,
                 time = .[["frame"]],
                 group = .[["group"]],
+                particles = .[["particle"]],
                 nmotifs = motif_amount
             ))
 
@@ -358,6 +359,7 @@ motif.discovery <-
              thr = 0.98,
              time = NULL,
              group = NULL,
+             particles = NULL,
              nmotifs = 3L) {
 
         mp <- tsmp::compute(df,
@@ -377,22 +379,24 @@ motif.discovery <-
         discord.loc <- lapply(seq_along(discord.idx), function(i) c(discord.idx[[i]], discord.neigh[[i]]))
         motifs.group <- lapply(motifs.loc, function(i) group[i])
         discord.group <- lapply(discord.loc, function(i) group[i])
+        motifs.particles <- lapply(motifs.loc, function(i) particles[i])
+        discord.particles <- lapply(discord.loc, function(i) particles[i])
         motifs.loc <- lapply(motifs.loc, function(i) time[i])
         discord.loc <- lapply(discord.loc, function(i) time[i])
 
         motifs.locations <- lapply(
             seq_along(motifs.loc),
             function(i) rbind(
-                data.frame(motif = i, location = motifs.loc[i], group = motifs.group[i])) %>%
-                    dplyr::rename(location = 2, group = 3)
+                data.frame(motif = i, location = motifs.loc[i], group = motifs.group[i], particle = motifs.particles[i])) %>%
+                    dplyr::rename(location = 2, group = 3, particle = 4)
             ) %>% bind_rows()
 
 
         discord.locations <- lapply(
             seq_along(discord.loc),
             function(i) rbind(
-                data.frame(motif = i, location = discord.loc[i], group = discord.group[i])) %>%
-                    dplyr::rename(location = 2, group = 3)
+                data.frame(motif = i, location = discord.loc[i], group = discord.group[i], particle = discord.particles[i])) %>%
+                    dplyr::rename(location = 2, group = 3, particle = 4)
             ) %>% bind_rows()
 
         return(list(motifs, motifs.locations, discord.locations))
@@ -405,7 +409,6 @@ clustering.variables <- function(df, variables) {
 }
 
 reapply.clustering <- function(df, p.corr = NULL) {
-    print(df)
     df.output <- df
     drop.cols <-
                 c("segmentchromo",
@@ -441,19 +444,6 @@ reapply.clustering <- function(df, p.corr = NULL) {
 
             test <- anova(mod.1, mod.2)
             print(test)
-
-            # p.val <- summary(test)[[1]][["Pr(>F)"]]
-
-            # if (p.val < 0.05) {
-            #     print("Significant segment differences found!")
-            #     max.clust <- max(cluster.changes$change)
-            #     df.output <- df.output %>% mutate(cluster = ifelse(group == j, cluster + max.clust, cluster))
-            #     cluster.changes <- rbind(cluster.changes, data.frame(group = j, cluster = c, change = c + n.clusters))
-            # } else {
-            #     print("No significant differences found!")
-            #     go.back <- cluster.changes %>% filter(group == i && cluster == c) %>% select(change)
-            #     df.output <- df.output %>% mutate(cluster = ifelse(group == j, go.back, cluster))
-            # }
         }
     }
 

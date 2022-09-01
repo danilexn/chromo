@@ -22,7 +22,8 @@ chromo.ui.panel.motifs <- tabPanel(
                             fluidPage(
                               fluidRow(
                                 column(4, downloadButton("downMotif", "Download figure")),
-                                column(4, downloadButton("downMotifTab", "Download JSON")),
+                                column(4, downloadButton("downMotifTab", "Download JSON"),
+                                          downloadButton("downCSVMotifTab", "Download CSV")),
                               )
                             ),
                             withSpinner(plotOutput("plot_motifs_b", height = "auto")),
