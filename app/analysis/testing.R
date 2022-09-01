@@ -5,10 +5,10 @@ significant.velocities <- function(df_vt.smooth) {
 significant.velocities.segment <- function(df_vt) {
     p_values_test <- c()
     df.vt.global <<- df_vt
-    
+
     for (i in unique(df_vt$cluster)) {
       df.vt.cluster <- df_vt %>% filter(cluster == i)
-      
+
       if (length(unique(df.vt.cluster$group)) < 2) {
         next
       }
@@ -19,7 +19,7 @@ significant.velocities.segment <- function(df_vt) {
       print(wilcox.result)
       p_values_test <- c(p_values_test, wilcox.result$p.value)
     }
-    
+
     print("Adjusted p-values (Wilcox test)")
     p.adjust(p_values_test, method = "holm")
   }
@@ -71,6 +71,7 @@ segmentation.significance <- function(segments, method, p.correct) {
 spectrum.significance <-
     function(df_freqs,
              range) {
+        range <- range / max(range)
         df_freqs <- df_freqs %>% mutate(spec.f = spec.f / max(spec.f)) %>%
             filter(spec.f < range[2], spec.f > range[1])
 
@@ -92,12 +93,13 @@ spectrum.significance <-
 spectrum.significance.segment <-
   function(df_freqs,
            range) {
+    range <- range / max(range)
     df_freqs <- df_freqs %>% mutate(spec.f = spec.f / max(spec.f)) %>%
       filter(spec.f < range[2], spec.f > range[1])
-    
+
     p_values_test_a <- c()
     p_values_test_b <- c()
-    
+
     for (i in unique(df_freqs$cluster)) {
       m1.r <-
         glm(factor(group) ~ spec.f * spec.s ,
@@ -117,12 +119,10 @@ spectrum.significance.segment <-
       p_values_test_a <- c(p_values_test_a, aov_result[["Pr(>Chi)"]][2])
       p_values_test_b <- c(p_values_test_b, aov_result[["Pr(>Chi)"]][3])
     }
-    
+
     print("Adjusted p-values (interaction)")
     print(p.adjust(p_values_test_a, method = "holm"))
-    
+
     print("Adjusted p-values (additive)")
     p.adjust(p_values_test_b, method = "holm")
-    
-    
   }

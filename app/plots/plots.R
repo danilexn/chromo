@@ -22,7 +22,6 @@ segmentation.plot <- function(segments, grouping = "none") {
         theme(legend.position = "none")
 
     ggarrange(p1, p2, widths = c(0.7, 0.3))
-    ## partial_bundle(toWebGL(subplot(ggplotly(p1, height = 500), ggplotly(p2, height = 500), widths = c(0.7, 0.3), titleX=T)))
 }
 
 segmentation.plotly <- function(segments, grouping = "none") {
@@ -96,7 +95,7 @@ spectral.plot <-
             ) +
             theme_bw() +
             ylab("Normalized spectral density")
-            
+
         x_lim <- layer_scales(p1)$x$get_limits()
         p1 <- p1 + scale_x_continuous(trans = "log10", 
                                       breaks = 10^seq(log10(x_lim[1]), 
@@ -157,33 +156,6 @@ spectral.plot.segments <-
 heatmap.plot <-
     function(df_specgram,
              freq = FALSE) {
-
-        # x <- list(
-        #     title = "Time"
-        # )
-        # y <- list(
-        #     title = "Period (min)"
-        # )
-        # df <- data.frame(df_specgram)
-
-        # plt <- df %>%
-        #         split(df$group) %>%
-        #         purrr::map(~{
-        #             plot_ly(data = .x, x = .x$frame, y = .x$spec, name = .x$group, colors = colorRamp(specCols)) %>%
-        #             add_histogram2dcontour(ncontours=40, contours = list(coloring='heatmap'), line = list(width = 0)) %>%
-        #             layout(yaxis = y, xaxis = x, annotations = list(
-        #                                                         text = .x$group[1],
-        #                                                         xref = "paper",
-        #                                                         yref = "paper",
-        #                                                         yanchor = "bottom",
-        #                                                         xanchor = "center",
-        #                                                         align = "center",
-        #                                                         x = 0.5,
-        #                                                         y = 1,
-        #                                                         showarrow = FALSE
-        #                                                     ),
-        #                     plot_bgcolor='#5E4FA2')
-        #         }) %>% subplot(nrows = length(.), margin = 0.05, shareX = TRUE)
 
         if (freq) {
             p1 <-
@@ -289,7 +261,6 @@ plot.velocities <-
         }
 
         plt <- ggplotly(p1, autosize = TRUE, height = 500, width = 600)
-        # plt <- ggarrange(p1, p2, nrow = 2)
         return(p1)
     }
 
@@ -313,7 +284,6 @@ plot.velocities.segment <-
             theme(panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(1, "lines"))
 
         plt <- ggplotly(p2, height = 100 * nrow(nclust), width = 600)
-        # plt <- ggarrange(p1, p2, nrow = 2)
         return(p2)
     }
 
@@ -376,20 +346,16 @@ locations.motifs.plot <- function(locations) {
 
 causality.plot <- function(adj.mat, threshold, names){
     adj.mat <- t(apply(adj.mat, 1, function(x) ifelse(x >= threshold, x, 0)))
-    # out.network <- as.network(adj.mat,mode="directed", weighted = T, ignore.eval = FALSE, names.eval = "weights", directed = T)
-    # network.vertex.names(out.network) <- names
     net_build <- igraph_to_networkD3(graph_from_adjacency_matrix(adj.mat, mode = "directed", weighted = TRUE))
     net_build$nodes$name <- names
     net_build$nodes$group <- 1
     net_build$links$value <- net_build$links$value * 2
     tryCatch({
-        # ggnet2(out.network, label = TRUE, label.size = 5, arrow.size = 12, arrow.gap = 0.05, edge.size = "weights", edge.label = "weights")
         forceNetwork(Links = net_build$links, Nodes = net_build$nodes,
             Source = "source",Target = "target", Value = "value", NodeID = "name",
             Group = "group", opacity = 0.8, arrows = TRUE, fontSize = 12, fontFamily = "Arial",
             opacityNoHover = 1, zoom = TRUE)
     },error=function(cond){
-        # ggnet2(out.network, label = TRUE, label.size = 5, arrow.size = 12, arrow.gap = 0.05)
         forceNetwork(Links = data.frame(source = 0, target = 1, value = 0),
             Nodes = net_build$nodes,
             Source = "source",Target = "target", Value = "value", NodeID = "name",

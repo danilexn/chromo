@@ -11,7 +11,7 @@ server <- function(input, output, session) {
   restore_df_query_causality <- reactiveVal()
   restore_df_sequence_motifs <- reactiveVal()
   restore_df_sequence_causality <- reactiveVal()
-  
+
   # Input data upload
   df_upload <- reactive({
     data <- NULL
@@ -24,23 +24,20 @@ server <- function(input, output, session) {
           print(input$upload$type)
           print(input$upload$datapath)
           tryCatch({
-          if ((tolower(input$upload$type) == "text/csv") || 
+          if ((tolower(input$upload$type) == "text/csv") ||
               (tolower(getExtension(input$upload$datapath)) == "csv")) {
-            # df_input <- read.csv(input$upload$datapath)
             df_input_list <- lapply(input$upload$datapath, read.csv)
-          } else if ((tolower(input$upload$type) == "text/tsv") || 
+          } else if ((tolower(input$upload$type) == "text/tsv") ||
                 (tolower(getExtension(input$upload$datapath)) == "tsv")) {
-            # df_input <- read.csv(input$upload$datapath)
             df_input_list <- lapply(input$upload$datapath, read.tsv)
           } else if (grepl("xls", tolower(input$upload$type)) ||
                      grepl("excel", tolower(input$upload$type))) {
-            # df_input <- read_excel(input$upload$datapath)
             df_input_list <- lapply(input$upload$datapath, read_excel)
           }
             names(df_input_list) <- gsub(input$upload$name, pattern="\\..*", replacement="")
-            
+
             df_input <- bind_rows(df_input_list, .id = "group.file.chromo")
-            
+
             data <- df_input
           }, error=function(cond){
             showNotification(paste("Could not open file because: ", cond), type = "error")
@@ -64,18 +61,18 @@ server <- function(input, output, session) {
     segmentation_raw(NULL)
     return(data)
   })
-  
+
   # Display Data that has been uploaded
   output$data_uploaded <- renderDataTable({
     df_normalized()
   })
-  
+
   output$fileUploaded <- reactive({
     return(!is.null(df_normalized()))
   })
-  
+
   outputOptions(output, "fileUploaded", suspendWhenHidden = FALSE)
-  
+
   # Normalization
   df_normalized <- reactive ({
     cols_normalize <- input$cols_normalize
@@ -107,7 +104,7 @@ server <- function(input, output, session) {
     } else {
       norm_temp <- df_selected()
     }
-    
+
     if (is.null(norm_temp)) {
       return(NULL)
     }
@@ -155,7 +152,7 @@ server <- function(input, output, session) {
 
     return(df)
   })
-  
+
   df_selected <- reactive({
     df <- df_upload()
 
@@ -195,7 +192,7 @@ server <- function(input, output, session) {
 
     return(df)
   })
-  
+
   observe({
     if (is.null(df_upload())) {
       return()
@@ -263,15 +260,15 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "df_query_causality",
                            selected = restore_df_query_causality())
     }
-    
+
     # Find the coordinate variables
     coords <-
       intersect(var_list,
                 c("time", "Time", "frame", "Frame", "slice", "Slice"))
-    
+
     updateSelectizeInput(session, "time_vars",
                          selected = coords)
-    
+
     # Find the coordinate variables
     coords <-
       intersect(
@@ -291,26 +288,26 @@ server <- function(input, output, session) {
           "COORD.Z"
         )
       )
-    
+
     updateSelectizeInput(session, "coord_vars",
                          selected = coords)
-    
+
     # Find the label variable
     label <-
       intersect(var_list,
                 c("label", "group", "strain", "Label", "Group", "Strain", "group.file.chromo"))
-    
+
     updateSelectizeInput(session, "grouping_vars",
                          selected = label)
-    
+
     # Find the particle variable
     particle <-
       intersect(var_list, c("particle", "cell", "Particle", "Cell"))
-    
+
     updateSelectizeInput(session, "particle_vars",
                          selected = particle)
   })
-  
+
   observe({
     if (input$particle_vars != "none" && !is.null(df_upload())) {
       particles <-
@@ -334,7 +331,7 @@ server <- function(input, output, session) {
       }
     }
   })
-  
+
   observe({
     if (input$grouping_vars != "none" && !is.null(df_upload())) {
       groups <-
@@ -402,7 +399,7 @@ server <- function(input, output, session) {
                     sampling.time = sampl_freq,
                     updateProgress = NULL)
       }
-      
+
 
       progress$close()
       segments
@@ -449,14 +446,11 @@ server <- function(input, output, session) {
         theme_bw() +
         labs(x = "Time") +
         theme(legend.position = "none")
-      
-      #p <- ggplotly(p, autosize = TRUE,
-      #      width = 600,
-      #      height = 200*length(input$cols_individual_plot)*length(input$part_individual_plot))
+
       return(p)
     }
   })
-  
+
   plot_segments <- reactive({
     validate(
       need(segmentation_calc(), "\n\n\n\nPlease, run 'Calculate Segmentation' to continue."
@@ -474,11 +468,20 @@ server <- function(input, output, session) {
     p <- segmentation.plotly(segmentation_calc())
     return(p)
   })
-  
+
   plot_spectrum <- reactive({
     validate(
       need(spectrum_global(), "")
     )
+
+    val <- spectrum_global()["spec.f"]
+    if (!input$freq_spectrogram) {
+      val <- (1 / val) / 60
+    }
+
+    updateSliderInput(session, "spec_range", value = c(min(val)*0.1, max(val)*0.6),
+          min = min(val), max = max(val))
+
     p <- spectral.plot(
       spectrum_global(),
       input$sampl_freq,
@@ -547,7 +550,7 @@ server <- function(input, output, session) {
     )
     return(p) # in Plotly format
   })
-  
+
   segment_significant <- reactive({
     t <-
       segmentation.significance(segmentation_calc(),
@@ -563,7 +566,7 @@ server <- function(input, output, session) {
     )
     return(causality_discovered())
   })
-  
+
   segment_clustering <- reactive({
     t <- segmentation.summary(segmentation_calc())
     return(t)
@@ -573,7 +576,7 @@ server <- function(input, output, session) {
     t <- segmentation.grouped.summary(segmentation_calc())
     return(t)
   })
-  
+
   motifs_discovery <- reactiveVal()
   observe({
     if (input$df_vars_motifs == "none") {
@@ -584,7 +587,7 @@ server <- function(input, output, session) {
         showNotification("Only numeric columns can be analyzed.", type = "error")
         return(NULL)
     }
-    
+
     df <- df_normalized()
     seqs <-
       df[df[[input$grouping_vars]] == input$df_sequence_motifs, input$df_vars_motifs]
@@ -609,7 +612,7 @@ server <- function(input, output, session) {
       )
     motifs_discovery(motifs)
   })
-  
+
   motifs_discovery_segmented <- reactiveVal()
 
   observeEvent(input$run_motifs, {
@@ -796,7 +799,7 @@ server <- function(input, output, session) {
   plot_motifs <- reactive({
     return(req(motifs_discovery()))
   })
-  
+
   plot_motifs_segmented <- reactive({
     return(req(motifs_discovery_segmented()))
   })
@@ -812,7 +815,7 @@ server <- function(input, output, session) {
     )
     return(spec_signif)
   })
-  
+
   spectrum_significance_segment <- reactive({
     validate(
       need(spectrum_global(), "Please, run 'Calculate Spectrum' to continue."
@@ -910,7 +913,7 @@ server <- function(input, output, session) {
                                   coord_vars,
                                   displ_k))
   })
-  
+
   plot_velocities <- reactive({
     validate(
       need(velocities_group(), "")
@@ -993,7 +996,7 @@ server <- function(input, output, session) {
                       input$perc_corr_range,
                       input$df_query_causality)
   })
-  
+
   velocities_significance <- reactive({
     validate(
       need(velocities_group(), "Please, run 'Calculate Densities' to continue."
@@ -1001,7 +1004,7 @@ server <- function(input, output, session) {
     )
     significant.velocities(velocities_group())
   })
-  
+
   velocities_significance_segment <- reactive({
     validate(
       need(velocities_group(), "Please, run 'Calculate Densities' to continue."
@@ -1009,7 +1012,7 @@ server <- function(input, output, session) {
     )
     significant.velocities.segment(velocities_segment())
   })
-  
+
   plot_width <- reactive ({
     input$plot_width
   })
@@ -1022,12 +1025,12 @@ server <- function(input, output, session) {
   plot_height_motif <- reactive ({
     input$plot_height * 1.75
   })
-  
+
   output$plot_segments <-
     renderPlotly({
       plot_segments_ly()
     })
-  
+
   output$plot_spectrum <-
     renderPlotly({
       ggplotly(plot_spectrum(), width = 600)
@@ -1037,7 +1040,7 @@ server <- function(input, output, session) {
     renderPlotly({
       ggplotly(plot_spectrum_segments(), width = 600)
     })
-  
+
   output$plot_heatmap <-
     renderPlot(width = plot_width, height = plot_height, {
       plot_heatmap()
@@ -1047,16 +1050,16 @@ server <- function(input, output, session) {
     renderPlot(width = plot_width, height = plot_height, {
       plot_heatmap_segment()
     })
-  
+
   output$plot_individual <-
     renderPlotly({
       ggplotly(plot_individual(), width = 600)
     })
-  
+
   output$table_segments <- renderDataTable({
     segment_clustering()
   })
-  
+
   output$table_segments_grouped <- renderDataTable({
     segment_clustering_grouped()
   })
@@ -1068,27 +1071,27 @@ server <- function(input, output, session) {
   output$adj_matrix <- renderPrint({
     adj_matrix_show()
   })
-  
+
   output$plot_motifs_a <-
     renderPlot(width = plot_width, height = plot_height, {
       plot(tsmp::as.matrixprofile(plot_motifs()[[1]]))
     })
-  
+
   output$plot_motifs_b <-
     renderPlot(width = plot_width, height = plot_height, {
       plot(tsmp::motifs(plot_motifs()[[1]]))
     })
-  
+
   output$plot_motifs_c <-
     renderPlot(width = plot_width, height = plot_height, {
       plot(tsmp::discords(plot_motifs()[[1]]))
     })
-  
+
   output$plot_morlet <-
     renderPlot(width = plot_width, height = plot_height, {
       plot_morlet()
     })
-  
+
   output$plot_velocities <-
     renderPlotly({
       ggplotly(plot_velocities(), width = 600)
@@ -1127,7 +1130,7 @@ server <- function(input, output, session) {
   output$summ_spectrum <- renderPrint({
     spectrum_significance()
   })
-  
+
   output$summ_spectrum_segment <- renderPrint({
     spectrum_significance_segment()
   })
@@ -1135,7 +1138,7 @@ server <- function(input, output, session) {
   output$summ_velocities <- renderPrint({
     velocities_significance()
   })
-  
+
   output$summ_velocities_segment <- renderPrint({
     velocities_significance_segment()
   })
@@ -1250,17 +1253,17 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downSpecTable <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_Spectrum.csv", sep = "")
     },
     content <- function(file) {
-      spectrum_tab_download <- spectrum_global()[c("particle", 
-                                                 "group", 
+      spectrum_tab_download <- spectrum_global()[c("particle",
+                                                 "group",
                                                  "spec.s",
                                                  "spec.f")]
-      
+
       write.csv(spectrum_tab_download, file, row.names = FALSE)
     }
   )
@@ -1288,7 +1291,7 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downSpecSegTable <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_Spectrum_Segments.csv", sep = "")
@@ -1302,7 +1305,7 @@ server <- function(input, output, session) {
                                                      "cluster",
                                                      "spec.s",
                                                      "spec.f")]
-      
+
       write.csv(spectrum_tab_download, file, row.names = FALSE)
     }
   )
@@ -1330,7 +1333,7 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downVelTable <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_", input$density_variables, ".csv", sep = "")
@@ -1355,7 +1358,7 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downVelSegTable <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_", input$density_variables, "_Segments.csv", sep = "")
@@ -1429,7 +1432,7 @@ server <- function(input, output, session) {
     },
     contentType = "application/pdf"
   )
-  
+
   output$downMP <- downloadHandler(
     filename <- function() {
       paste("ChroMo_", Sys.time(), "_MatrixProfile.pdf", sep = "")
@@ -1548,11 +1551,11 @@ server <- function(input, output, session) {
       write.csv(df_normalized(), file, row.names = FALSE)
     }
   )
-  
+
   output$count <- renderText({
     vals$count
   })
-  
+
   session$onSessionEnded(function() {
     isolate(vals$count <- vals$count - 1)
   })
@@ -1598,5 +1601,5 @@ server <- function(input, output, session) {
     restore_df_sequence_motifs(state$input$df_sequence_motifs)
     restore_df_sequence_causality(state$input$df_sequence_causality)
   })
-  
+
 }
