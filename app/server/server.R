@@ -213,6 +213,14 @@ server <- function(input, output, session) {
                            choices = var_list)
     }
   })
+  
+  observe({
+    if (input$adjustcolors == "1") {
+      plotColor <<- styles_color_Default
+    } else if (input$adjustcolors == "2") {
+      plotColor <<- gsub("\\s","", strsplit(input$user_color_list,",")[[1]])
+    }
+  })
 
   observe({
     if (is.null(df_upload())) {
@@ -444,6 +452,8 @@ server <- function(input, output, session) {
         facet_grid(variable * part.chromo ~  ., scales = "free") +
         geom_path(aes(group = !!sym(input$particle_vars))) +
         theme_bw() +
+        scale_color_manual(values=plotColor) +
+        scale_fill_manual(values=plotColor) +
         labs(x = "Time") +
         theme(legend.position = "none")
 
