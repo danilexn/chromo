@@ -10,3 +10,6 @@ specCols <- c(
     "#D53E4F",
     "#9E0142"
 )
+
+styles_color_Default <- c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF") 
+plotColor <- styles_color_Default

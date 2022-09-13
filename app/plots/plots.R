@@ -8,6 +8,8 @@ segmentation.plot <- function(segments, grouping = "none") {
         geom_point(aes(x = begin), size = 3, alpha = 0.2) +
         geom_point(aes(x = end), size = 3, alpha = 0.2) +
         theme_bw() +
+        scale_color_manual(values=plotColor) +
+        scale_fill_manual(values=plotColor) +
         xlab("Time") +
         ylab("Cluster") +
         theme(legend.position = "none")
@@ -17,6 +19,8 @@ segmentation.plot <- function(segments, grouping = "none") {
         geom_col(alpha = 0.5) +
         coord_flip() +
         theme_bw() +
+        scale_color_manual(values=plotColor) +
+        scale_fill_manual(values=plotColor) +
         xlab("Cluster") +
         ylab("Count") +
         theme(legend.position = "none")
@@ -34,6 +38,8 @@ segmentation.plotly <- function(segments, grouping = "none") {
         geom_point(aes(x = begin), size = 3, alpha = 0.2) +
         geom_point(aes(x = end), size = 3, alpha = 0.2) +
         theme_bw() +
+        scale_color_manual(values=plotColor) +
+        scale_fill_manual(values=plotColor) +
         xlab("Time") +
         ylab("Cluster") +
         theme(legend.position = "none")
@@ -43,6 +49,8 @@ segmentation.plotly <- function(segments, grouping = "none") {
         geom_col(alpha = 0.5) +
         coord_flip() +
         theme_bw() +
+        scale_color_manual(values=plotColor) +
+        scale_fill_manual(values=plotColor) +
         xlab("Cluster") +
         ylab("Count") +
         theme(legend.position = "none")
@@ -94,6 +102,8 @@ spectral.plot <-
                 alpha = 0.3
             ) +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab("Normalized spectral density")
 
         x_lim <- layer_scales(p1)$x$get_limits()
@@ -144,6 +154,8 @@ spectral.plot.segments <-
             ) +
             facet_wrap(cluster ~ ., scales = 'free') +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab("Normalized spectral density") +
             scale_x_continuous(trans = "log10") +
             theme(panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(2, "lines"))
@@ -254,6 +266,8 @@ plot.velocities <-
                          trim = TRUE,
                          outlier.shape = NA) +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab(colname)
 
         if (individual) {
@@ -280,6 +294,8 @@ plot.velocities.segment <-
                          outlier.shape = NA) +
             facet_wrap(cluster ~ ., ncol = 2) +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab(colname) +
             theme(panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(1, "lines"))
 
@@ -299,6 +315,8 @@ plot.msd <-
             stat_summary(geom = "line", fun.y = mean) +
             stat_summary(geom = "ribbon", fun.data = mean_cl_normal, alpha = 0.3) +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab("Mean Squared Displacement") +
             xlab("Lag")
 
@@ -319,6 +337,8 @@ plot.msd.segment <-
             stat_summary(geom = "ribbon", fun.data = mean_cl_normal, alpha = 0.3) +
             facet_wrap(cluster ~ ., scale = "free") +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab("Mean Squared Displacement") +
             xlab("Lag")
 
@@ -337,6 +357,8 @@ locations.motifs.plot <- function(locations) {
             xlab("") +
             ylab("Time location") +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             theme(legend.position = "none")
 
     plt <- ggplotly(p1, height = 200, width = 200 * nlocations)
@@ -383,6 +405,8 @@ trajectory.features <-
             xlab("") +
             ylab("Position") +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             geom_vline(
                 xintercept = c(best.case$end, best.case$begin),
                 color = "black",
@@ -406,6 +430,8 @@ trajectory.features <-
                 limits = c(0, 1)
             ) +
             theme_bw() +
+            scale_color_manual(values=plotColor) +
+            scale_fill_manual(values=plotColor) +
             ylab('') +
             geom_raster() +
             labs(fill = "Relative\nvalue") +
