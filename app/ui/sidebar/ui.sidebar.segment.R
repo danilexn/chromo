@@ -68,12 +68,9 @@ chromo.ui.sidebar.segment <- function(request) {
                    conditionalPanel(
                      condition = "input.tabsegment == 'Spectrum'",
                      h5("Spectrogram"),
-                     sliderInput(
+                     controlledSliderUI(
                        "spec_range",
-                       label = "Spectrum comparison",
-                       min = 0,
-                       max = 1,
-                       value = c(0.01, 0.6)
+                       label = "Spectrum comparison"
                      ),
                      sliderInput(
                        "spec_ticks",

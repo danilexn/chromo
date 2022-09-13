@@ -468,6 +468,8 @@ server <- function(input, output, session) {
     p <- segmentation.plotly(segmentation_calc())
     return(p)
   })
+  
+  spec_range_slider <- callModule(controlledSlider, "spec_range", 0.01, 0.6, c(0,1))
 
   plot_spectrum <- reactive({
     validate(
@@ -479,8 +481,9 @@ server <- function(input, output, session) {
       val <- (1 / val) / 60
     }
 
-    updateSliderInput(session, "spec_range", value = c(min(val)*0.1, max(val)*0.6),
-          min = min(val), max = max(val))
+    spec_range_slider <- callModule(controlledSlider, 
+                                    "spec_range", min(val)*0.1, 
+                                    max(val)*0.6, c(min(val),max(val)))
 
     p <- spectral.plot(
       spectrum_global(),
@@ -811,7 +814,7 @@ server <- function(input, output, session) {
     )
     spec_signif <- spectrum.significance(
       spectrum_global(),
-      input$spec_range
+      c(spec_range_slider$min, spec_range_slider$max)
     )
     return(spec_signif)
   })
@@ -823,7 +826,7 @@ server <- function(input, output, session) {
     )
     spec_signif <- spectrum.significance.segment(
       spectrum_segments(),
-      input$spec_range
+      c(spec_range_slider$min, spec_range_slider$max)
     )
     return(spec_signif)
   })

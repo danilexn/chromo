@@ -1,5 +1,6 @@
 source("ui/sidebar/ui.sidebar.main.R")
 source("ui/panel/ui.panel.main.R")
+source("ui/custom_ui.R")
 
 appName <- 'ChroMo'
 
