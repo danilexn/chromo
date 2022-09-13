@@ -1079,12 +1079,12 @@ server <- function(input, output, session) {
 
   output$plot_motifs_b <-
     renderPlot(width = plot_width, height = plot_height, {
-      plot(tsmp::motifs(plot_motifs()[[1]]))
+      plot(tsmp::motifs(plot_motifs()[[1]], k = input$motif_amount))
     })
 
   output$plot_motifs_c <-
     renderPlot(width = plot_width, height = plot_height, {
-      plot(tsmp::discords(plot_motifs()[[1]]))
+      plot(tsmp::discords(plot_motifs()[[1]], k = input$motif_amount))
     })
 
   output$plot_morlet <-
@@ -1181,7 +1181,7 @@ server <- function(input, output, session) {
 
         output[[plt_discord]] <-
           renderPlot(width = plot_width, height = plot_height, {
-            plot(tsmp::discords(seg.toplot[[my_i]][[1]]))
+            plot(tsmp::discords(seg.toplot[[my_i]][[1]], k = input$motif_amount))
           })
 
         plt_dur_discord <-
@@ -1195,7 +1195,7 @@ server <- function(input, output, session) {
         plt_motif <- paste("plot_segment_motifs_", my_i, sep = "")
 
         output[[plt_motif]] <- renderPlot(width = plot_width, height = plot_height, {
-          plot(tsmp::motifs(seg.toplot[[my_i]][[1]]))
+          plot(tsmp::motifs(seg.toplot[[my_i]][[1]], k = input$motif_amount))
         })
 
         plt_dur_motif <-
@@ -1451,7 +1451,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(tsmp::motifs(plot_motifs()))
+      plot(tsmp::motifs(plot_motifs(), k = input$motif_amount))
       dev.off()
     },
     contentType = "application/pdf"
@@ -1483,7 +1483,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(tsmp::discords(plot_motifs()))
+      plot(tsmp::discords(plot_motifs(), k = input$motif_amount))
       dev.off()
     },
     contentType = "application/pdf"
