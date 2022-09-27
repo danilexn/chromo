@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN R -e "install.packages('shinydashboard')"
 RUN R -e "install.packages('shinycssloaders')"
 RUN R -e "install.packages('plotly')"
-RUN R -e "devtools::install_github('https://github.com/cran/s2/tree/1.0.5')"
+RUN R -e "devtools::install_github('https://github.com/cran/s2/tree/1.0.7')"
 RUN R -e "install.packages('spdep')"
 RUN R -e "install.packages('forecast')"
 RUN R -e "install.packages('future')"
