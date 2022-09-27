@@ -468,6 +468,8 @@ server <- function(input, output, session) {
     p <- segmentation.plotly(segmentation_calc())
     return(p)
   })
+  
+  spec_range_slider <- callModule(controlledSlider, "spec_range", 0.01, 0.6, c(0,1))
 
   plot_spectrum <- reactive({
     validate(
@@ -479,8 +481,9 @@ server <- function(input, output, session) {
       val <- (1 / val) / 60
     }
 
-    updateSliderInput(session, "spec_range", value = c(min(val)*0.1, max(val)*0.6),
-          min = min(val), max = max(val))
+    spec_range_slider <- callModule(controlledSlider, 
+                                    "spec_range", min(val)*0.1, 
+                                    max(val)*0.6, c(min(val),max(val)))
 
     p <- spectral.plot(
       spectrum_global(),
@@ -811,7 +814,7 @@ server <- function(input, output, session) {
     )
     spec_signif <- spectrum.significance(
       spectrum_global(),
-      input$spec_range
+      c(spec_range_slider$min, spec_range_slider$max)
     )
     return(spec_signif)
   })
@@ -823,7 +826,7 @@ server <- function(input, output, session) {
     )
     spec_signif <- spectrum.significance.segment(
       spectrum_segments(),
-      input$spec_range
+      c(spec_range_slider$min, spec_range_slider$max)
     )
     return(spec_signif)
   })
@@ -1079,12 +1082,12 @@ server <- function(input, output, session) {
 
   output$plot_motifs_b <-
     renderPlot(width = plot_width, height = plot_height, {
-      plot(tsmp::motifs(plot_motifs()[[1]]))
+      plot(tsmp::motifs(plot_motifs()[[1]], k = input$motif_amount))
     })
 
   output$plot_motifs_c <-
     renderPlot(width = plot_width, height = plot_height, {
-      plot(tsmp::discords(plot_motifs()[[1]]))
+      plot(tsmp::discords(plot_motifs()[[1]], k = input$motif_amount))
     })
 
   output$plot_morlet <-
@@ -1181,7 +1184,7 @@ server <- function(input, output, session) {
 
         output[[plt_discord]] <-
           renderPlot(width = plot_width, height = plot_height, {
-            plot(tsmp::discords(seg.toplot[[my_i]][[1]]))
+            plot(tsmp::discords(seg.toplot[[my_i]][[1]], k = input$motif_amount))
           })
 
         plt_dur_discord <-
@@ -1195,7 +1198,7 @@ server <- function(input, output, session) {
         plt_motif <- paste("plot_segment_motifs_", my_i, sep = "")
 
         output[[plt_motif]] <- renderPlot(width = plot_width, height = plot_height, {
-          plot(tsmp::motifs(seg.toplot[[my_i]][[1]]))
+          plot(tsmp::motifs(seg.toplot[[my_i]][[1]], k = input$motif_amount))
         })
 
         plt_dur_motif <-
@@ -1451,7 +1454,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(tsmp::motifs(plot_motifs()))
+      plot(tsmp::motifs(plot_motifs(), k = input$motif_amount))
       dev.off()
     },
     contentType = "application/pdf"
@@ -1483,7 +1486,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       pdf(file, width = input$plot_width / 72, height = input$plot_height / 72)
-      plot(tsmp::discords(plot_motifs()))
+      plot(tsmp::discords(plot_motifs(), k = input$motif_amount))
       dev.off()
     },
     contentType = "application/pdf"
